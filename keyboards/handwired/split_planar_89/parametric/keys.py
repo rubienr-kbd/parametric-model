@@ -7,14 +7,14 @@ Indexing and terms:
 
              first key (keys are not aligned to columns)
              ↓
-         ╭───────────────────────────────────────────────────────────────────────────────────────╮
-row 5 →  │  ESC F1  F2  F3  F4  F5  F6  F7  F8  F9 F10 F11 F12   PR  SL  PA                      │
-         │  ^    1   2   3   4   5   6   7   8   9   0  ... BS   INS P1  PUP   NUM  /  *     -   │
-         │  TAB  q w e r ...                              ISOE   DEL END PDN    7   8   9    +   │
-         │  CLK  a s d f ...                               ISO                  4   5   6    +   │
-         │  LSF  < y x c ...                               RSF        ↑         1   2   3  ENTER │
-row 0 →  │  LCTL ... LALT           SPACE        RALT ... RCTL    ←   ↓   →    INS INS DEL ENTER │
-         ╰───────────────────────────────────────────────────────────────────────────────────────╯
+         ╭─────────────────────────────────────────────────────────────────────────────────────╮
+row 5 →  │  ESC F1  F2  F3  F4  F5  F6  F7  F8  F9 F10 F11 F12  PR  SL  PA        .   .   .    │
+         │   ^   1   2   3   4   5   6   7   8   9   0  ... ←   INS P1  PUP    NUM  /   *   -  │
+         │   ⇄   q w e r ...                                ↲   DEL END PDN     7   8   9   +  │
+         │   ⇓   a s d f ...                                ↲                   4   5   6   +  │
+         │   ⇑   < y x c ...                                ⇑         ↑         1   2   3  ENT │
+row 0 →  │  LCTL ... LALT           SPACE        RALT ... RCTL    ←   ↓   →    INS INS DEL ENT │
+         ╰─────────────────────────────────────────────────────────────────────────────────────╯
 
 - row left/right direction may be aso denoted as x, x-direciton or x-axis
 - row up/down direction may also be denoted as y, y-direction or y-axis
@@ -67,6 +67,7 @@ class KeyBase(object):
         self.clearance_bottom = config.clearance_y
         self.position = [0, 0, 0]  # type: List[float, float, float]
         self.rotation = [0, 0, 0]  # type: List[float, float, float]
+        self.is_invisible = False
 
     def set_position_relative_to(self, ref_key, pos: Direction) -> None:
         if pos == Direction.TOP:
@@ -143,125 +144,96 @@ class Key100UnitSpacer(Key):
     def __init__(self) -> None:
         super(Key100UnitSpacer, self).__init__()
         self.name = "us100"
-
-
-class Key100UnitNumpadSpacer(Key):
-    """
-    for spacing the numpad
-    """
-
-    def __init__(self) -> None:
-        super(Key100UnitNumpadSpacer, self).__init__()
-        self.name = "uns100"
-        self.clearance_left = GlobalConfig.group.clearance_x_f_group
-
-
-class Key100UnitUpArrowSpacer(Key):
-    """
-    for spacing the arrow-up key
-    """
-
-    def __init__(self) -> None:
-        super(Key100UnitUpArrowSpacer, self).__init__()
-        self.name = "uas100"
-        self.clearance_left = GlobalConfig.group.clearance_x_f_group
-
-
-class Key111Unit(Key100Unit):
-    def __init__(self) -> None:
-        super(Key111Unit, self).__init__()
-        self.name = "u1.111"
-        self.key_base.set_key_unit_factor(1.1111)
-
+        self.is_invisible = True
 
 class Key125Unit(Key100Unit):
     def __init__(self) -> None:
         super(Key125Unit, self).__init__()
-        self.name = "125"
+        self.name = "u125"
         self.key_base.set_key_unit_factor(1.25)
 
 
 class Key150Unit(Key100Unit):
     def __init__(self) -> None:
         super(Key150Unit, self).__init__()
-        self.name = "150"
+        self.name = "u150"
         self.key_base.set_key_unit_factor(1.5)
 
 
 class Key175Unit(Key100Unit):
     def __init__(self) -> None:
         super(Key175Unit, self).__init__()
-        self.name = "175"
+        self.name = "u175"
         self.key_base.set_key_unit_factor(1.75)
 
 
 class Key200Unit(Key100Unit):
     def __init__(self) -> None:
         super(Key200Unit, self).__init__()
-        self.name = "200"
+        self.name = "u200"
         self.key_base.set_key_unit_factor(2)
 
 
 class Key225Unit(Key100Unit):
     def __init__(self) -> None:
         super(Key225Unit, self).__init__()
-        self.name = "225"
+        self.name = "u225"
         self.key_base.set_key_unit_factor(2.25)
 
 
 class Key250Unit(Key100Unit):
     def __init__(self) -> None:
         super(Key250Unit, self).__init__()
-        self.name = "250"
+        self.name = "u250"
         self.key_base.set_key_unit_factor(2.5)
 
 
 class Key275Unit(Key100Unit):
     def __init__(self) -> None:
         super(Key275Unit, self).__init__()
-        self.name = "275"
+        self.name = "u275"
         self.key_base.set_key_unit_factor(2.75)
 
 
 class Key300Unit(Key100Unit):
     def __init__(self) -> None:
         super(Key300Unit, self).__init__()
-        self.name = "300"
+        self.name = "u300"
         self.key_base.set_key_unit_factor(3)
 
 
 class Key400Unit(Key100Unit):
     def __init__(self) -> None:
         super(Key400Unit, self).__init__()
-        self.name = "400"
+        self.name = "u400"
         self.key_base.set_key_unit_factor(4)
 
 
 class Key500Unit(Key100Unit):
     def __init__(self) -> None:
         super(Key500Unit, self).__init__()
-        self.name = "500"
+        self.name = "u500"
         self.key_base.set_key_unit_factor(5)
-
-
-class Key566Unit(Key100Unit):
-    def __init__(self) -> None:
-        super(Key566Unit, self).__init__()
-        self.name = "566"
-        self.key_base.set_key_unit_factor(5.6667)
 
 
 class Key600Unit(Key100Unit):
     def __init__(self) -> None:
         super(Key600Unit, self).__init__()
-        self.name = "600"
+        self.name = "u600"
         self.key_base.set_key_unit_factor(6)
+
+
+class Key625Unit(Key100Unit):
+    def __init__(self) -> None:
+        super(Key625Unit, self).__init__()
+        self.name = "u625"
+        self.key_base.set_key_unit_factor(6.25)
 
 
 class Key700Unit(Key100Unit):
     def __init__(self) -> None:
         super(Key700Unit, self).__init__()
-        self.name = "700"
+        self.name = "u700"
         self.key_base.set_key_unit_factor(7)
 
 

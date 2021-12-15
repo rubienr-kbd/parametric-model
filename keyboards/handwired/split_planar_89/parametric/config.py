@@ -16,10 +16,10 @@ class KeyboardSize(Enum):
     """
     S100 = 1
     S80 = 2
-    S75 = 3  # not implemented
-    S65 = 4  # not implemented
-    S60 = 5  # not implemented
-    S40 = 6  # not implemented
+    S75 = 3
+    S65 = 4
+    S60 = 5
+    S40 = 6
 
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -29,10 +29,10 @@ class KeyboardSize(Enum):
 class KeyBaseConfig(object):
     def __init__(self):
         # center to center distance of two 1-uni keys
-        self.unit_length = 19  # type: float
+        self.unit_length = 19.0  # type: float
         # half of clearance in-between two keys
-        self.clearance_x = 1 / 2  # type: float
-        self.clearance_y = 1 / 2  # type: float
+        self.clearance_x = 1 / 2.0  # type: float
+        self.clearance_y = 1 / 2.0  # type: float
 
 
 class KeyCapConfig(object):
@@ -44,9 +44,9 @@ class KeyCapConfig(object):
 
     def __init__(self):
         # ensure that: width + clearance + clearance == unit_length
-        self.width = 18  # type: float
-        self.depth = 18  # type: float
-        self.thickness = 9  # type: float
+        self.width = 18.0  # type: float
+        self.depth = 18.0  # type: float
+        self.thickness = 9.0  # type: float
 
 
 class KeySwitchConfig(object):
@@ -55,9 +55,9 @@ class KeySwitchConfig(object):
     """
 
     def __init__(self):
-        self.width = 18  # type: float
-        self.depth = 18  # type: float
-        self.thickness = 4  # type: float
+        self.width = 18.0  # type: float
+        self.depth = 18.0  # type: float
+        self.thickness = 4.0  # type: float
 
 
 class KeySwitchSlotConfig(object):
@@ -66,13 +66,13 @@ class KeySwitchSlotConfig(object):
     """
 
     def __init__(self):
-        self.width = 18  # type: float
-        self.depth = 18  # type: float
-        self.thickness = 4  # type: float
-        self.clearance_x = 1  # type: float
-        self.clearance_y = 1  # type: float
-        self.clearance_f_group_x = 14  # type: float
-        self.clearance_arrow_group_x = 14  # type: float
+        self.width = 18.0  # type: float
+        self.depth = 18.0  # type: float
+        self.thickness = 4.0  # type: float
+        self.clearance_x = 1.0  # type: float
+        self.clearance_y = 1.0  # type: float
+        self.clearance_f_group_x = 14.0  # type: float
+        self.clearance_arrow_group_x = 14.0  # type: float
 
 
 class GroupConfig(object):
@@ -84,9 +84,9 @@ class GroupConfig(object):
     """
 
     def __init__(self):
-        self.clearance_x_f_group = 14  # type: float
-        self.clearance_x_arrow_group = 14  # type: float
-        self.clearance_x_numpad = 14  # type: float
+        self.clearance_x_f_group = 14.0  # type: float
+        self.clearance_x_arrow_group = 14.0  # type: float
+        self.clearance_x_numpad = 14.0  # type: float
 
 
 class ArrowGroupConfig(object):
@@ -95,7 +95,7 @@ class ArrowGroupConfig(object):
     """
 
     def __init__(self):
-        self.clearance_x = 14  # type: float
+        self.clearance_x = 14.0  # type: float
 
 
 class MatrixConfig(object):

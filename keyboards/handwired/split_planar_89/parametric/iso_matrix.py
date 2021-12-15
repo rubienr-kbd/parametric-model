@@ -22,18 +22,18 @@ def build_key_row_0(size: KeyboardSize = KeyboardSize.S100):
 
     assert size not in [KeyboardSize.S40, KeyboardSize.S60, KeyboardSize.S65, KeyboardSize.S75, KeyboardSize.S65]
 
-    if size == KeyboardSize.S80:
+    if size.value >= KeyboardSize.S80.value:
         # arrow key group
         r.extend([
             ArrowLeftKey(),
             ArrowDownKey(),
             ArrowRightKey()])
 
-    if size == KeyboardSize.S100:
+    if size.value >= KeyboardSize.S100.value:
         # numpad
         r.extend([
-            Key200Unit(),
-            DeleteKey()])
+            IsoNumpadInsKey(),
+            NumpadDeleteKey()])
 
     KeyUtils.update_key_pos_in_row(r)
     return r
@@ -62,17 +62,17 @@ def build_key_row_1(size: KeyboardSize = KeyboardSize.S100):
 
     assert size not in [KeyboardSize.S40, KeyboardSize.S60, KeyboardSize.S65, KeyboardSize.S75, KeyboardSize.S65]
 
-    if size == KeyboardSize.S80:
+    if size.value >= KeyboardSize.S80.value:
         # arrow key
         r.extend([
             Key100UnitUpArrowSpacer(),
             ArrowUpKey(),
             Key100UnitSpacer()])
 
-    if size == KeyboardSize.S100:
+    if size.value >= KeyboardSize.S100.value:
         # numpad
         r.extend([
-            Key100Unit(),
+            Key100UnitNumpadSpacer(),
             Key100Unit(),
             Key100Unit(),
             IsoNumpadEnterKey()])
@@ -105,17 +105,17 @@ def build_key_row_2(size: KeyboardSize = KeyboardSize.S100):
 
     assert size not in [KeyboardSize.S40, KeyboardSize.S60, KeyboardSize.S65, KeyboardSize.S75, KeyboardSize.S65]
 
-    if size == KeyboardSize.S80:
+    if size.value >= KeyboardSize.S80.value:
         # empty
         r.extend([
             Key100UnitUpArrowSpacer(),
             Key100UnitSpacer(),
             Key100UnitSpacer()])
 
-    if size == KeyboardSize.S100:
+    if size.value >= KeyboardSize.S100.value:
         # numpad
         r.extend([
-            Key100Unit(),
+            Key100UnitNumpadSpacer(),
             Key100Unit(),
             Key100Unit(),
             Key100UnitSpacer()])
@@ -147,7 +147,7 @@ def build_key_row_3(size: KeyboardSize = KeyboardSize.S100):
 
     assert size not in [KeyboardSize.S40, KeyboardSize.S60, KeyboardSize.S65, KeyboardSize.S75, KeyboardSize.S65]
 
-    if size == KeyboardSize.S80:
+    if size.value >= KeyboardSize.S80.value:
         # ins/del 6-key block
         r.extend([
             IsoEnterKey(),
@@ -155,10 +155,10 @@ def build_key_row_3(size: KeyboardSize = KeyboardSize.S100):
             EndKey(),
             PageDown()])
 
-    if size == KeyboardSize.S100:
+    if size.value >= KeyboardSize.S100.value:
         # numpad
         r.extend([
-            Key100Unit(),
+            Key100UnitNumpadSpacer(),
             Key100Unit(),
             Key100Unit(),
             IsoNumpadPlusKey()])
@@ -190,17 +190,17 @@ def build_key_row_4(size: KeyboardSize = KeyboardSize.S100):
 
     assert size not in [KeyboardSize.S40, KeyboardSize.S60, KeyboardSize.S65, KeyboardSize.S75, KeyboardSize.S65]
 
-    if size == KeyboardSize.S80:
+    if size.value >= KeyboardSize.S80.value:
         # ins/del 6-key block
         r.extend([
             InsertKey(),
             HomeKey(),
             PageUpKey()])
 
-    if size == KeyboardSize.S100:
+    if size.value >= KeyboardSize.S100.value:
         # numpad
         r.extend([
-            Key100Unit(),
+            Key100UnitNumpadSpacer(),
             Key100Unit(),
             Key100Unit(),
             Key100Unit()])
@@ -225,11 +225,11 @@ def build_key_row_5(size: KeyboardSize = KeyboardSize.S100):
          F9Key(),
          CharacterKey(),
          CharacterKey(),
-         F12Key(), ]
+         F12Key()]
 
     assert size not in [KeyboardSize.S40, KeyboardSize.S60, KeyboardSize.S65, KeyboardSize.S75, KeyboardSize.S65]
 
-    if size == KeyboardSize.S80:
+    if size.value >= KeyboardSize.S80.value:
         # print, scroll lock, pause
         r.extend([
             PrintKey(),
