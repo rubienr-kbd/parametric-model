@@ -65,6 +65,12 @@ class LeftMenulKey(Key125Unit):
         super(LeftMenulKey, self).__init__()
 
 
+class FnKey(Key100Unit):
+    def __init__(self):
+        self.name = "FN"
+        super(FnKey, self).__init__()
+
+
 class RightContextMenulKey(Key125Unit):
     def __init__(self):
         self.name = "RCTX"
@@ -124,20 +130,31 @@ class IsoEnterKey(Key111Unit):
         self.name = "ENT"
         super(IsoEnterKey, self).__init__()
 
-class ArrowLeftKey(CharacterKey):
+
+class IsoNumpadEnterKey(Key111Unit):
     def __init__(self):
-        super(ArrowLeftKey, self).__init__()
-        self.name = "LAR"
+        self.name = "NENT"
+        super(IsoNumpadEnterKey, self).__init__()
+
+
+class IsoNumpadPlusKey(Key111Unit):
+    def __init__(self):
+        self.name = "NPLUS"
+        super(IsoNumpadPlusKey, self).__init__()
+
 
 class ArrowDownKey(CharacterKey):
     def __init__(self):
         super(ArrowDownKey, self).__init__()
         self.name = "DAR"
 
+
 class ArrowRightKey(CharacterKey):
     def __init__(self):
         super(ArrowRightKey, self).__init__()
         self.name = "RAR"
+
+
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # keys with special clearance
@@ -146,84 +163,85 @@ class EscapeKey(CharacterKey):
     def __init__(self):
         super(EscapeKey, self).__init__()
         self.name = "ESC"
-        self.clearance_right = GlobalConfig.f_group.clearance_x / 2
+        self.clearance_right = GlobalConfig.group.clearance_x_f_group / 2
 
 
 class F1Key(CharacterKey):
     def __init__(self):
         super(F1Key, self).__init__()
         self.name = "F1"
-        self.clearance_left = GlobalConfig.f_group.clearance_x / 2
+        self.clearance_left = GlobalConfig.group.clearance_x_f_group / 2
 
 
 class F4Key(CharacterKey):
     def __init__(self):
         super(F4Key, self).__init__()
         self.name = "F4"
-        self.clearance_right = GlobalConfig.f_group.clearance_x / 2
+        self.clearance_right = GlobalConfig.group.clearance_x_f_group / 2
 
 
 class F5Key(CharacterKey):
     def __init__(self):
         super(F5Key, self).__init__()
         self.name = "F5"
-        self.clearance_left = GlobalConfig.f_group.clearance_x / 2
+        self.clearance_left = GlobalConfig.group.clearance_x_f_group / 2
 
 
 class F8Key(CharacterKey):
     def __init__(self):
         super(F8Key, self).__init__()
         self.name = "F8"
-        self.clearance_right = GlobalConfig.f_group.clearance_x / 2
+        self.clearance_right = GlobalConfig.group.clearance_x_f_group / 2
 
 
 class F9Key(CharacterKey):
     def __init__(self):
         super(F9Key, self).__init__()
         self.name = "F9"
-        self.clearance_right = GlobalConfig.f_group.clearance_x / 2
+        self.clearance_right = GlobalConfig.group.clearance_x_f_group / 2
 
 
 class F12Key(CharacterKey):
     def __init__(self):
         super(F12Key, self).__init__()
         self.name = "F12"
-        self.clearance_left = GlobalConfig.f_group.clearance_x / 2
-        self.clearance_right = GlobalConfig.f_group.clearance_x / 2
+        self.clearance_left = GlobalConfig.group.clearance_x_f_group / 2
+        self.clearance_right = GlobalConfig.group.clearance_x_f_group / 2
 
 
 class PrintKey(CharacterKey):
     def __init__(self):
         super(PrintKey, self).__init__()
         self.name = "PRT"
-        self.clearance_left = GlobalConfig.f_group.clearance_x / 2
-        self.clearance_right = GlobalConfig.f_group.clearance_x / 2
+        self.clearance_left = GlobalConfig.group.clearance_x_f_group / 2
+        self.clearance_right = GlobalConfig.group.clearance_x_f_group / 2
 
 
 class InsertKey(CharacterKey):
     def __init__(self):
         super(InsertKey, self).__init__()
         self.name = "INS"
-        self.clearance_left = GlobalConfig.f_group.clearance_x
+        self.clearance_left = GlobalConfig.group.clearance_x_f_group
 
 
 class DeleteKey(CharacterKey):
     def __init__(self):
         super(DeleteKey, self).__init__()
         self.name = "DEL"
-        self.clearance_left = GlobalConfig.f_group.clearance_x
+        self.clearance_left = GlobalConfig.group.clearance_x_f_group
 
 
 class ArrowLeftKey(CharacterKey):
     def __init__(self):
         super(ArrowLeftKey, self).__init__()
         self.name = "RAR"
-        self.clearance_left = GlobalConfig.f_group.clearance_x
+        self.clearance_left = GlobalConfig.group.clearance_x_f_group
 
 
 class ArrowUpKey(CharacterKey):
     def __init__(self):
         super(ArrowUpKey, self).__init__()
         self.name = "UAR"
-        self.clearance_left = GlobalConfig.f_group.clearance_x + GlobalConfig.key_base.clearance_x + \
-                              GlobalConfig.key_base.clearance_x + GlobalConfig.key_base.unit_length + GlobalConfig.key_base.unit_length / 2
+        self.clearance_left = \
+            GlobalConfig.group.clearance_x_f_group + GlobalConfig.key_base.clearance_x + \
+            GlobalConfig.key_base.clearance_x + GlobalConfig.key_base.unit_length + GlobalConfig.key_base.unit_length / 2

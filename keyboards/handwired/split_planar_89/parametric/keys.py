@@ -1,7 +1,5 @@
-from enum import Enum
-from typing import List, Optional, Union
+from typing import List, Optional
 from cadquery import Shape
-
 from config import *
 
 """
@@ -137,104 +135,132 @@ class Key(object):
 
 class Key100Unit(Key):
     def __init__(self) -> None:
-        Key.__init__(self)
+        super(Key100Unit, self).__init__()
         self.name = "u100"
+
+
+class Key100UnitSpacer(Key):
+    def __init__(self) -> None:
+        super(Key100UnitSpacer, self).__init__()
+        self.name = "us100"
+
+
+class Key100UnitNumpadSpacer(Key):
+    """
+    for spacing the numpad
+    """
+
+    def __init__(self) -> None:
+        super(Key100UnitNumpadSpacer, self).__init__()
+        self.name = "uns100"
+        self.clearance_left = GlobalConfig.group.clearance_x_f_group
+
+
+class Key100UnitUpArrowSpacer(Key):
+    """
+    for spacing the arrow-up key
+    """
+
+    def __init__(self) -> None:
+        super(Key100UnitUpArrowSpacer, self).__init__()
+        self.name = "uas100"
+        self.clearance_left = GlobalConfig.group.clearance_x_f_group
 
 
 class Key111Unit(Key100Unit):
     def __init__(self) -> None:
-        Key100Unit.__init__(self)
+        super(Key111Unit, self).__init__()
         self.name = "u1.111"
         self.key_base.set_key_unit_factor(1.1111)
 
 
 class Key125Unit(Key100Unit):
     def __init__(self) -> None:
-        Key100Unit.__init__(self)
+        super(Key125Unit, self).__init__()
         self.name = "125"
         self.key_base.set_key_unit_factor(1.25)
 
 
 class Key150Unit(Key100Unit):
     def __init__(self) -> None:
-        Key100Unit.__init__(self)
+        super(Key150Unit, self).__init__()
         self.name = "150"
         self.key_base.set_key_unit_factor(1.5)
 
 
 class Key175Unit(Key100Unit):
     def __init__(self) -> None:
-        Key100Unit.__init__(self)
+        super(Key175Unit, self).__init__()
         self.name = "175"
         self.key_base.set_key_unit_factor(1.75)
 
 
 class Key200Unit(Key100Unit):
     def __init__(self) -> None:
-        Key100Unit.__init__(self)
+        super(Key200Unit, self).__init__()
         self.name = "200"
         self.key_base.set_key_unit_factor(2)
 
 
 class Key225Unit(Key100Unit):
     def __init__(self) -> None:
-        Key100Unit.__init__(self)
+        super(Key225Unit, self).__init__()
         self.name = "225"
         self.key_base.set_key_unit_factor(2.25)
 
 
 class Key250Unit(Key100Unit):
     def __init__(self) -> None:
-        Key100Unit.__init__(self)
+        super(Key250Unit, self).__init__()
         self.name = "250"
         self.key_base.set_key_unit_factor(2.5)
 
 
 class Key275Unit(Key100Unit):
     def __init__(self) -> None:
-        Key100Unit.__init__(self)
+        super(Key275Unit, self).__init__()
         self.name = "275"
         self.key_base.set_key_unit_factor(2.75)
 
 
 class Key300Unit(Key100Unit):
     def __init__(self) -> None:
-        Key100Unit.__init__(self)
+        super(Key300Unit, self).__init__()
         self.name = "300"
         self.key_base.set_key_unit_factor(3)
 
 
 class Key400Unit(Key100Unit):
     def __init__(self) -> None:
-        Key100Unit.__init__(self)
+        super(Key400Unit, self).__init__()
         self.name = "400"
         self.key_base.set_key_unit_factor(4)
 
 
 class Key500Unit(Key100Unit):
     def __init__(self) -> None:
-        Key100Unit.__init__(self)
+        super(Key500Unit, self).__init__()
         self.name = "500"
         self.key_base.set_key_unit_factor(5)
 
 
 class Key566Unit(Key100Unit):
     def __init__(self) -> None:
-        Key100Unit.__init__(self)
+        super(Key566Unit, self).__init__()
         self.name = "566"
         self.key_base.set_key_unit_factor(5.6667)
 
 
 class Key600Unit(Key100Unit):
     def __init__(self) -> None:
-        Key100Unit.__init__(self)
+        super(Key600Unit, self).__init__()
         self.name = "600"
         self.key_base.set_key_unit_factor(6)
 
 
 class Key700Unit(Key100Unit):
     def __init__(self) -> None:
-        Key100Unit.__init__(self)
+        super(Key700Unit, self).__init__()
         self.name = "700"
         self.key_base.set_key_unit_factor(7)
 
