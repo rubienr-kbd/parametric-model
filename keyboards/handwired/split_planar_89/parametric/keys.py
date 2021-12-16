@@ -1,6 +1,7 @@
 from typing import List, Optional
 from cadquery import Shape
 from config import *
+from cq_mixins import *
 
 """
 Indexing and terms:
@@ -52,60 +53,93 @@ class Direction(Enum):
     RIGHT = 2
     BOTTOM = 3
     LEFT = 4
+    FRONT = 5
+    BACK = 6
 
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-class KeyBase(object):
+class KeyBase(CqBoxMixin):
     def __init__(self, config: KeyBaseConfig) -> None:
         self.unit_length = config.unit_length  # type: float
-        self.unit_factor = 1  # type: float
+        self.unit_width_factor = 1.0  # type: float
+        self.unit_depth_factor = 1.0  # type: float
         self.clearance_left = config.clearance_x
         self.clearance_right = config.clearance_x
         self.clearance_top = config.clearance_y
         self.clearance_bottom = config.clearance_y
         self.position = [0, 0, 0]  # type: List[float, float, float]
         self.rotation = [0, 0, 0]  # type: List[float, float, float]
-        self.is_invisible = False
+        self.is_visible = True
+
+    @property
+    def width(self) -> float:
+        return self.unit_width_factor * self.unit_length
+
+    @property
+    def depth(self) -> float:
+        return self.unit_depth_factor * self.unit_length
+
+    @property
+    def thickness(self):
+        return 0.1
 
     def set_position_relative_to(self, ref_key, pos: Direction) -> None:
+        """
+        Defines our position as top/bottom left/right of the reference key.
+        """
         if pos == Direction.TOP:
+            self.position[1] = ref_key.position[1] + ref_key.depth / 2 + ref_key.clearance_top + self.clearance_bottom + self.depth / 2
             self.position[0] = ref_key.position[0]
-            self.position[1] = ref_key.position[1] + ref_key.unit_length / 2 + ref_key.clearance_top + self.clearance_bottom + self.unit_length / 2
+        elif pos == Direction.BOTTOM:
+            self.position[1] = ref_key.position[1] - ref_key.depth / 2 - ref_key.clearance_bottom - self.clearance_top - self.depth / 2
+            self.position[0] = ref_key.position[0]
 
         elif pos == Direction.RIGHT:
-            self.position[0] = ref_key.position[0] + ref_key.unit_length / 2 + ref_key.clearance_right + self.clearance_left + self.unit_length / 2
+            self.position[0] = ref_key.position[0] + ref_key.width / 2 + ref_key.clearance_right + self.clearance_left + self.width / 2
             self.position[1] = ref_key.position[1]
-
-        elif pos == Direction.BOTTOM:
-            self.position[0] = ref_key.position[0]
-            self.position[1] = ref_key.position[1] - ref_key.unit_length / 2 - ref_key.clearance_bottom - self.clearance_top - self.unit_length / 2
-
         elif pos == Direction.LEFT:
-            self.position[0] = ref_key.position[0] - ref_key.unit_length / 2 - ref_key.clearance_left - self.clearance_right - self.unit_length / 2
+            self.position[0] = ref_key.position[0] - ref_key.width / 2 - ref_key.clearance_left - self.clearance_right - self.width / 2
             self.position[1] = ref_key.position[1]
 
-    def set_key_unit_factor(self, unit_factor: float):
-        self.unit_factor = unit_factor
-        self.unit_length = GlobalConfig.key_base.unit_length * self.unit_factor
+        else:
+            assert False
+
+    def align_to_position(self, position: float, pos: Direction) -> None:
+        """
+        Aligns our bounding box top/bottom left/right front/top to position (x, y or z-axis).
+        """
+        if pos == Direction.TOP:
+            self.position[2] = position - self.thickness / 2
+        elif pos == Direction.BOTTOM:
+            self.position[2] = position + self.thickness / 2
+        elif pos == Direction.RIGHT:
+            self.position[0] = position - self.width / 2
+        elif pos == Direction.LEFT:
+            self.position[0] = position + self.width / 2
+        elif pos == Direction.FRONT:
+            self.position[1] = position + self.depth / 2
+        elif pos == Direction.BACK:
+            self.position[1] = position - self.depth / 2
 
 
-class KeyCap(object):
+
+class KeyCap(CqBoxMixin):
     def __init__(self, config: KeyCapConfig) -> None:
         self.width = config.width  # type: float
         self.depth = config.depth  # type: float
         self.thickness = config.thickness  # type: float
 
 
-class KeySwitch(object):
+class KeySwitch(CqBoxMixin):
     def __init__(self, config: KeySwitchConfig) -> None:
         self.width = config.width  # type: float
         self.depth = config.depth  # type: float
         self.thickness = config.thickness  # type: float
 
 
-class KeySwitchSlot(object):
+class KeySwitchSlot(CqBoxMixin):
     def __init__(self, config: KeySwitchSlotConfig) -> None:
         self.width = config.width  # type: float
         self.depth = config.depth  # type: float
@@ -119,14 +153,13 @@ class CadqueryObject(object):
         self.slot = None  # type: Optional[Shape]
 
 
-class Key(object):
+class Key(KeyMixin, CqKeyMixin):
     def __init__(self) -> None:
         self.key_base = KeyBase(GlobalConfig.key_base)
         self.cap = KeyCap(GlobalConfig.cap)
         self.switch = KeySwitch(GlobalConfig.switch)
         self.switch_slot = KeySwitch(GlobalConfig.switch_slot)
         self.cq = CadqueryObject()
-        self.key_base.set_key_unit_factor(1)
 
         self.name = ""
 
@@ -144,138 +177,98 @@ class Key100UnitSpacer(Key):
     def __init__(self) -> None:
         super(Key100UnitSpacer, self).__init__()
         self.name = "us100"
-        self.is_invisible = True
+        self.key_base.is_visible = False
+
 
 class Key125Unit(Key100Unit):
     def __init__(self) -> None:
         super(Key125Unit, self).__init__()
         self.name = "u125"
-        self.key_base.set_key_unit_factor(1.25)
+        self.set_key_width_unit_factor(1.25)
 
 
 class Key150Unit(Key100Unit):
     def __init__(self) -> None:
         super(Key150Unit, self).__init__()
         self.name = "u150"
-        self.key_base.set_key_unit_factor(1.5)
+        self.set_key_width_unit_factor(1.5)
 
 
 class Key175Unit(Key100Unit):
     def __init__(self) -> None:
         super(Key175Unit, self).__init__()
         self.name = "u175"
-        self.key_base.set_key_unit_factor(1.75)
+        self.set_key_width_unit_factor(1.75)
 
 
 class Key200Unit(Key100Unit):
     def __init__(self) -> None:
         super(Key200Unit, self).__init__()
         self.name = "u200"
-        self.key_base.set_key_unit_factor(2)
+        self.set_key_width_unit_factor(2)
 
 
 class Key225Unit(Key100Unit):
     def __init__(self) -> None:
         super(Key225Unit, self).__init__()
         self.name = "u225"
-        self.key_base.set_key_unit_factor(2.25)
+        self.set_key_width_unit_factor(2.25)
 
 
 class Key250Unit(Key100Unit):
     def __init__(self) -> None:
         super(Key250Unit, self).__init__()
         self.name = "u250"
-        self.key_base.set_key_unit_factor(2.5)
+        self.set_key_width_unit_factor(2.5)
 
 
 class Key275Unit(Key100Unit):
     def __init__(self) -> None:
         super(Key275Unit, self).__init__()
         self.name = "u275"
-        self.key_base.set_key_unit_factor(2.75)
+        self.set_key_width_unit_factor(2.75)
 
 
 class Key300Unit(Key100Unit):
     def __init__(self) -> None:
         super(Key300Unit, self).__init__()
         self.name = "u300"
-        self.key_base.set_key_unit_factor(3)
+        self.set_key_width_unit_factor(3)
 
 
 class Key400Unit(Key100Unit):
     def __init__(self) -> None:
         super(Key400Unit, self).__init__()
         self.name = "u400"
-        self.key_base.set_key_unit_factor(4)
+        self.set_key_width_unit_factor(4)
 
 
 class Key500Unit(Key100Unit):
     def __init__(self) -> None:
         super(Key500Unit, self).__init__()
         self.name = "u500"
-        self.key_base.set_key_unit_factor(5)
+        self.set_key_width_unit_factor(5)
 
 
 class Key600Unit(Key100Unit):
     def __init__(self) -> None:
         super(Key600Unit, self).__init__()
         self.name = "u600"
-        self.key_base.set_key_unit_factor(6)
+        self.set_key_width_unit_factor(6)
 
 
 class Key625Unit(Key100Unit):
     def __init__(self) -> None:
         super(Key625Unit, self).__init__()
         self.name = "u625"
-        self.key_base.set_key_unit_factor(6.25)
+        self.set_key_width_unit_factor(6.25)
 
 
 class Key700Unit(Key100Unit):
     def __init__(self) -> None:
         super(Key700Unit, self).__init__()
         self.name = "u700"
-        self.key_base.set_key_unit_factor(7)
+        self.set_key_width_unit_factor(7)
 
-
-# ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-
-class KeyUtils(object):
-
-    #    @staticmethod
-    #    def update_next_key_pos_in_row(key: Key, next_key: Key) -> None:
-    #
-    #        p = KeyUtils.compute_next_key_pos_in_row(key, next_key)
-    #        p.p_position[1] = key.p_position[1]
-    #        p.p_position[2] = key.p_position[2]
-    #        next_key.p_position.clear()
-    #        next_key.p_position.extend(p.p_position)
-
-    @staticmethod
-    def update_key_pos_in_row(row: List[Key]) -> None:
-        """
-        :param row: list of keys (row) to update in y direction according to the first key
-        """
-        for (i_left, i_right) in [ilr for ilr in zip(range(len(row) - 1), range(1, len(row)))]:
-            key_left = row[i_left]
-            key_right = row[i_right]
-            key_right.key_base.set_position_relative_to(key_left.key_base, Direction.RIGHT)
-
-    #    @staticmethod
-    #   def compute_next_row_pos(key: Optional[Key], next_key: Key) -> Placement:
-    #        p = Placement()
-    #        p.p_rotation = key.p_rotation
-    #        p.p_position = key.p_position
-    #        p.p_position[1] = key.p_position[1] + key.b_depth / 2 + KeyConfig.switch.clearance_y + next_key.b_depth / 2
-    #        return p
-    #
-    #    @staticmethod
-    #    def update_next_row_pos(key: Optional[Key], next_row_key: Key) -> None:
-    #        p = KeyUtils.compute_next_row_pos(key, next_row_key)
-    #        p.p_position[0] = next_row_key.p_position[0]
-    #        p.p_position[2] = next_row_key.p_position[2]
-    #        next_row_key.p_position.clear()
-    #        next_row_key.p_position.extend(p.p_position)
-    #
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

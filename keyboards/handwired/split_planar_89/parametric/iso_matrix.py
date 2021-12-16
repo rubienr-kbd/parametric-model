@@ -4,7 +4,7 @@ from iso_keys import *
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-def build_key_row_0(size: KeyboardSize = KeyboardSize.S100):
+def build_key_row_0(size: KeyboardSize):
     """
     space bar row
     """
@@ -15,12 +15,9 @@ def build_key_row_0(size: KeyboardSize = KeyboardSize.S100):
         SpaceKey(),
         RightAltKey(),
         RightContextMenulKey(),
-        RightCtrlKey(),
-        ArrowLeftKey(),
-        ArrowDownKey(),
-        ArrowRightKey()]
+        RightCtrlKey()]
 
-    assert size not in [KeyboardSize.S40, KeyboardSize.S60, KeyboardSize.S65, KeyboardSize.S75, KeyboardSize.S65]
+    assert size not in [KeyboardSize.S40, KeyboardSize.S60, KeyboardSize.S65, KeyboardSize.S75]
 
     if size.value >= KeyboardSize.S80.value:
         # arrow key group
@@ -33,16 +30,16 @@ def build_key_row_0(size: KeyboardSize = KeyboardSize.S100):
         # numpad
         r.extend([
             IsoNumpadInsKey(),
-            NumpadDeleteKey()])
+            NumpadDeleteKey(),
+            Key100UnitSpacer()])
 
-    KeyUtils.update_key_pos_in_row(r)
     return r
 
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-def build_key_row_1(size: KeyboardSize = KeyboardSize.S100):
+def build_key_row_1(size: KeyboardSize):
     """
     zxcv row
     """
@@ -60,7 +57,7 @@ def build_key_row_1(size: KeyboardSize = KeyboardSize.S100):
          CharacterKey(),
          RightShiftKey()]
 
-    assert size not in [KeyboardSize.S40, KeyboardSize.S60, KeyboardSize.S65, KeyboardSize.S75, KeyboardSize.S65]
+    assert size not in [KeyboardSize.S40, KeyboardSize.S60, KeyboardSize.S65, KeyboardSize.S75]
 
     if size.value >= KeyboardSize.S80.value:
         # arrow key
@@ -77,14 +74,13 @@ def build_key_row_1(size: KeyboardSize = KeyboardSize.S100):
             Key100Unit(),
             IsoNumpadEnterKey()])
 
-    KeyUtils.update_key_pos_in_row(r)
     return r
 
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-def build_key_row_2(size: KeyboardSize = KeyboardSize.S100):
+def build_key_row_2(size: KeyboardSize):
     """
     asdf row
     """
@@ -103,7 +99,7 @@ def build_key_row_2(size: KeyboardSize = KeyboardSize.S100):
          CharacterKey(),
          Key100UnitSpacer()]
 
-    assert size not in [KeyboardSize.S40, KeyboardSize.S60, KeyboardSize.S65, KeyboardSize.S75, KeyboardSize.S65]
+    assert size not in [KeyboardSize.S40, KeyboardSize.S60, KeyboardSize.S65, KeyboardSize.S75]
 
     if size.value >= KeyboardSize.S80.value:
         # empty
@@ -120,14 +116,13 @@ def build_key_row_2(size: KeyboardSize = KeyboardSize.S100):
             Key100Unit(),
             Key100UnitSpacer()])
 
-    KeyUtils.update_key_pos_in_row(r)
     return r
 
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-def build_key_row_3(size: KeyboardSize = KeyboardSize.S100):
+def build_key_row_3(size: KeyboardSize):
     """
     qwer row
     """
@@ -145,7 +140,7 @@ def build_key_row_3(size: KeyboardSize = KeyboardSize.S100):
          CharacterKey(),
          CharacterKey()]
 
-    assert size not in [KeyboardSize.S40, KeyboardSize.S60, KeyboardSize.S65, KeyboardSize.S75, KeyboardSize.S65]
+    assert size not in [KeyboardSize.S40, KeyboardSize.S60, KeyboardSize.S65, KeyboardSize.S75]
 
     if size.value >= KeyboardSize.S80.value:
         # ins/del 6-key block
@@ -163,13 +158,12 @@ def build_key_row_3(size: KeyboardSize = KeyboardSize.S100):
             Key100Unit(),
             IsoNumpadPlusKey()])
 
-    KeyUtils.update_key_pos_in_row(r)
     return r
 
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-def build_key_row_4(size: KeyboardSize = KeyboardSize.S100):
+def build_key_row_4(size: KeyboardSize):
     """
     number row
     """
@@ -188,7 +182,7 @@ def build_key_row_4(size: KeyboardSize = KeyboardSize.S100):
          CharacterKey(),
          BackspaceKey()]
 
-    assert size not in [KeyboardSize.S40, KeyboardSize.S60, KeyboardSize.S65, KeyboardSize.S75, KeyboardSize.S65]
+    assert size not in [KeyboardSize.S40, KeyboardSize.S60, KeyboardSize.S65, KeyboardSize.S75]
 
     if size.value >= KeyboardSize.S80.value:
         # ins/del 6-key block
@@ -205,11 +199,10 @@ def build_key_row_4(size: KeyboardSize = KeyboardSize.S100):
             Key100Unit(),
             Key100Unit()])
 
-    KeyUtils.update_key_pos_in_row(r)
     return r
 
 
-def build_key_row_5(size: KeyboardSize = KeyboardSize.S100):
+def build_key_row_5(size: KeyboardSize):
     """
     F row
     """
@@ -225,18 +218,18 @@ def build_key_row_5(size: KeyboardSize = KeyboardSize.S100):
          F9Key(),
          CharacterKey(),
          CharacterKey(),
-         F12Key()]
+         F12Key()
+         ]
 
-    assert size not in [KeyboardSize.S40, KeyboardSize.S60, KeyboardSize.S65, KeyboardSize.S75, KeyboardSize.S65]
+    assert size not in [KeyboardSize.S40, KeyboardSize.S60, KeyboardSize.S65, KeyboardSize.S75]
 
-    if size.value >= KeyboardSize.S80.value:
+    if size.value >= KeyboardSize.S40.value:
         # print, scroll lock, pause
         r.extend([
             PrintKey(),
             ScrollLockKey(),
             PauseKey()])
 
-    KeyUtils.update_key_pos_in_row(r)
     return r
 
 
@@ -244,22 +237,14 @@ def build_key_row_5(size: KeyboardSize = KeyboardSize.S100):
 
 
 def build_keyboard_matrix():
-    if GlobalConfig.matrix.layout_size == KeyboardSize.S100:
-        return [
-            build_key_row_0(KeyboardSize.S100),
-            build_key_row_1(KeyboardSize.S100),
-            build_key_row_2(KeyboardSize.S100),
-            build_key_row_3(KeyboardSize.S100),
-            build_key_row_4(KeyboardSize.S100),
-            build_key_row_5(KeyboardSize.S100)]
+    size = GlobalConfig.matrix.layout_size
+    assert size not in [KeyboardSize.S40, KeyboardSize.S60, KeyboardSize.S65, KeyboardSize.S75]
 
-    elif GlobalConfig.matrix.layout_size == KeyboardSize.S80:
-        return [
-            build_key_row_0(KeyboardSize.S80),
-            build_key_row_1(KeyboardSize.S80),
-            build_key_row_2(KeyboardSize.S80),
-            build_key_row_3(KeyboardSize.S80),
-            build_key_row_4(KeyboardSize.S80),
-            build_key_row_5(KeyboardSize.S80)]
-    else:
-        assert False
+    return [
+        build_key_row_0(size),
+        build_key_row_1(size),
+        build_key_row_2(size),
+        build_key_row_3(size),
+        build_key_row_4(size),
+        build_key_row_5(size)
+    ]

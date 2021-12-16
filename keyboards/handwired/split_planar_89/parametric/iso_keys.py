@@ -139,6 +139,7 @@ class IsoEnterKey(Key150Unit):
     def __init__(self):
         self.name = "ENT"
         super(IsoEnterKey, self).__init__()
+        self.set_key_depth_unit_factor(2)
 
 
 class IsoNumpadEnterKey(Key100Unit):
@@ -153,6 +154,7 @@ class IsoNumpadEnterKey(Key100Unit):
     def __init__(self):
         self.name = "NENT"
         super(IsoNumpadEnterKey, self).__init__()
+        self.set_key_depth_unit_factor(2)
 
 
 class IsoNumpadPlusKey(Key100Unit):
@@ -167,6 +169,7 @@ class IsoNumpadPlusKey(Key100Unit):
     def __init__(self):
         self.name = "NPLUS"
         super(IsoNumpadPlusKey, self).__init__()
+        self.set_key_depth_unit_factor(2)
 
 
 class IsoNumpadInsKey(Key200Unit):
@@ -367,5 +370,5 @@ class Key100UnitUpArrowSpacer(Key100UnitSpacer):
 
     def __init__(self) -> None:
         super(Key100UnitUpArrowSpacer, self).__init__()
-        self.name = "uas100"
+        self.name = "as100"
         self.key_base.clearance_left = GlobalConfig.group.clearance_x_f_group

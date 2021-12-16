@@ -14,12 +14,12 @@ class KeyboardSize(Enum):
     S60  =  60% ... inclusive: number-row
     S40  =  40% ... mainly characters
     """
-    S100 = 1
-    S80 = 2
-    S75 = 3
-    S65 = 4
-    S60 = 5
-    S40 = 6
+    S100 = 100
+    S80 = 80
+    S75 = 75
+    S65 = 65
+    S60 = 60
+    S40 = 40
 
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -119,7 +119,7 @@ class GlobalConfig(object):
 def parse_cli_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument("-k", "--keyboard-size", help="keyboard size to generate; influences the layout to compute, not the key size", default=KeyboardSize.S80.name,
+    parser.add_argument("-k", "--keyboard-size", help="keyboard size to generate; influences the layout to compute, not the key size", default=KeyboardSize.S100.name,
                         choices=[e.name for e in KeyboardSize])
     parser.add_argument("-e", "--export", help="export to STEP file (see --filename, --path)", action="store_true")
     parser.add_argument("-f", "--filename", help=".step file name", default="split-planar-{}.step".format(KeyboardSize.S80.name), type=str)
