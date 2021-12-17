@@ -31,8 +31,8 @@ class KeyBaseConfig(object):
         # center to center distance of two 1-uni keys
         self.unit_length = 19.0  # type: float
         # half of clearance in-between two keys
-        self.clearance_x = 1 / 2.0  # type: float
-        self.clearance_y = 1 / 2.0  # type: float
+        self.clearance_x = 0 / 2.0  # type: float
+        self.clearance_y = 0 / 2.0  # type: float
 
 
 class KeyCapConfig(object):
@@ -84,7 +84,8 @@ class GroupConfig(object):
     """
 
     def __init__(self):
-        self.clearance_x_f_group = 14.0  # type: float
+        self.clearance_x_f_group = 19.0 * 2 / 3  # type: float
+        self.clearance_y_f_group = 4  # type: float
         self.clearance_x_arrow_group = 14.0  # type: float
         self.clearance_x_numpad = 14.0  # type: float
 

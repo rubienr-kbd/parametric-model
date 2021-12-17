@@ -14,6 +14,7 @@ def build_key_row_0(size: KeyboardSize):
         LeftAltKey(),
         SpaceKey(),
         RightAltKey(),
+        FnKey(),
         RightContextMenulKey(),
         RightCtrlKey()]
 
@@ -97,7 +98,7 @@ def build_key_row_2(size: KeyboardSize):
          CharacterKey(),
          CharacterKey(),
          CharacterKey(),
-         Key100UnitSpacer()]
+         Key125UnitSpacer()]
 
     assert size not in [KeyboardSize.S40, KeyboardSize.S60, KeyboardSize.S65, KeyboardSize.S75]
 

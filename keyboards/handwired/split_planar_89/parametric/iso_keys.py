@@ -4,126 +4,127 @@ from keys import *
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # default ISO keys
 # https://deskthority.net/wiki/Keycap_size_by_keyboard
+# https://deskthority.net/wiki/Unit
 
 
 class CharacterKey(Key100Unit):
     def __init__(self):
-        self.name = "char"
         super(CharacterKey, self).__init__()
+        self.name = "char"
 
 
 class TabKey(Key150Unit):
     def __init__(self):
-        self.name = "TAB"
         super(TabKey, self).__init__()
+        self.name = "TAB"
 
 
 class CapsLockKey(Key175Unit):
     def __init__(self):
-        self.name = "CSFT"
         super(CapsLockKey, self).__init__()
+        self.name = "CSFT"
 
 
-class LeftAltKey(Key150Unit):
+class LeftAltKey(Key125Unit):
     def __init__(self):
-        self.name = "LALT"
         super(LeftAltKey, self).__init__()
+        self.name = "LALT"
 
 
-class LeftCtrlKey(Key150Unit):
+class LeftCtrlKey(Key125Unit):
     def __init__(self):
-        self.name = "LCTR"
         super(LeftCtrlKey, self).__init__()
+        self.name = "LCTR"
 
 
-class RightAltKey(Key150Unit):
+class RightAltKey(Key125Unit):
     def __init__(self):
-        self.name = "RALT"
         super(RightAltKey, self).__init__()
-
-
-class RightCtrlKey(Key150Unit):
-    def __init__(self):
-        self.name = "RCTL"
-        super(RightCtrlKey, self).__init__()
-
-
-class LeftShiftKey(Key150Unit):
-    def __init__(self):
-        self.name = "LSFT"
-        super(LeftShiftKey, self).__init__()
-
-
-class RightShiftKey(Key275Unit):
-    def __init__(self):
-        self.name = "RSFT"
-        super(RightShiftKey, self).__init__()
-
-
-class LeftMenulKey(Key125Unit):
-    def __init__(self):
-        self.name = "LMEN"
-        super(LeftMenulKey, self).__init__()
+        self.name = "RALT"
 
 
 class FnKey(Key125Unit):
     def __init__(self):
-        self.name = "FN"
         super(FnKey, self).__init__()
+        self.name = "FN"
+
+
+class RightCtrlKey(Key125Unit):
+    def __init__(self):
+        super(RightCtrlKey, self).__init__()
+        self.name = "RCTL"
+
+
+class LeftShiftKey(Key125Unit):
+    def __init__(self):
+        super(LeftShiftKey, self).__init__()
+        self.name = "LSFT"
+
+
+class RightShiftKey(Key275Unit):
+    def __init__(self):
+        super(RightShiftKey, self).__init__()
+        self.name = "RSFT"
+
+
+class LeftMenulKey(Key125Unit):
+    def __init__(self):
+        super(LeftMenulKey, self).__init__()
+        self.name = "LMEN"
 
 
 class RightContextMenulKey(Key125Unit):
     def __init__(self):
-        self.name = "RCTX"
         super(RightContextMenulKey, self).__init__()
+        self.name = "MENU"
 
 
 class SpaceKey(Key625Unit):
     def __init__(self):
-        self.name = "SPC"
         super(SpaceKey, self).__init__()
+        self.name = "SPC"
 
 
 class BackspaceKey(Key200Unit):
     def __init__(self):
-        self.name = "BSP"
         super(BackspaceKey, self).__init__()
+        self.name = "BSP"
 
 
 class ScrollLockKey(Key100Unit):
     def __init__(self):
-        self.name = "SRL"
         super(ScrollLockKey, self).__init__()
+        self.name = "SRL"
 
 
 class PauseKey(Key100Unit):
     def __init__(self):
-        self.name = "PAU"
         super(PauseKey, self).__init__()
+        self.name = "PAU"
 
 
 class HomeKey(Key100Unit):
     def __init__(self):
-        self.name = "HOM"
         super(HomeKey, self).__init__()
+        self.name = "HOM"
 
 
 class EndKey(Key100Unit):
     def __init__(self):
-        self.name = "END"
         super(EndKey, self).__init__()
+        self.name = "END"
 
 
 class PageUpKey(Key100Unit):
     def __init__(self):
-        self.name = "PUP"
         super(PageUpKey, self).__init__()
+        self.name = "PUP"
 
 
 class PageDown(Key100Unit):
     def __init__(self):
-        self.name = "PDN"
         super(PageDown, self).__init__()
+        self.name = "PDN"
 
 
 class IsoEnterKey(Key150Unit):
@@ -136,10 +137,12 @@ class IsoEnterKey(Key150Unit):
      ╰────╯
         ↑ 1.25
     """
+
     def __init__(self):
         self.name = "ENT"
         super(IsoEnterKey, self).__init__()
-        self.set_key_depth_unit_factor(2)
+        self.key_base.unit_depth_factor = 2
+        self.key_base._position_offset = [0, - GlobalConfig.key_base.unit_length / 2, 0]
 
 
 class IsoNumpadEnterKey(Key100Unit):
@@ -151,10 +154,12 @@ class IsoNumpadEnterKey(Key100Unit):
     │   │
     ╰───╯
     """
+
     def __init__(self):
         self.name = "NENT"
         super(IsoNumpadEnterKey, self).__init__()
-        self.set_key_depth_unit_factor(2)
+        self.key_base.unit_depth_factor = 2
+        self.key_base._position_offset = [0, - GlobalConfig.key_base.unit_length / 2, 0]
 
 
 class IsoNumpadPlusKey(Key100Unit):
@@ -166,10 +171,12 @@ class IsoNumpadPlusKey(Key100Unit):
     │   │
     ╰───╯
     """
+
     def __init__(self):
         self.name = "NPLUS"
         super(IsoNumpadPlusKey, self).__init__()
-        self.set_key_depth_unit_factor(2)
+        self.key_base.unit_depth_factor = 2
+        self.key_base._position_offset = [0, - GlobalConfig.key_base.unit_length / 2, 0]
 
 
 class IsoNumpadInsKey(Key200Unit):
@@ -179,9 +186,11 @@ class IsoNumpadInsKey(Key200Unit):
     │  0 INS   │ ← 1 unit
     ╰──────────╯
     """
+
     def __init__(self):
         self.name = "NINS"
         super(IsoNumpadInsKey, self).__init__()
+        self.key_base.clearance_left = GlobalConfig.group.clearance_x_numpad
 
 
 class ArrowDownKey(CharacterKey):
@@ -207,10 +216,12 @@ class EscapeKey(CharacterKey):
       │ESC│ →
       ╰───╯
     """
+
     def __init__(self):
         super(EscapeKey, self).__init__()
         self.name = "ESC"
         self.key_base.clearance_right = GlobalConfig.group.clearance_x_f_group / 2
+        self.key_base.clearance_bottom = GlobalConfig.group.clearance_y_f_group / 2
 
 
 class F1Key(CharacterKey):
@@ -220,6 +231,7 @@ class F1Key(CharacterKey):
     ← │F1 │
       ╰───╯
     """
+
     def __init__(self):
         super(F1Key, self).__init__()
         self.name = "F1"
@@ -233,6 +245,7 @@ class F4Key(CharacterKey):
       │F4 │ →
       ╰───╯
     """
+
     def __init__(self):
         super(F4Key, self).__init__()
         self.name = "F4"
@@ -246,6 +259,7 @@ class F5Key(CharacterKey):
     ← │F5 │
       ╰───╯
     """
+
     def __init__(self):
         super(F5Key, self).__init__()
         self.name = "F5"
@@ -259,6 +273,7 @@ class F8Key(CharacterKey):
       │F8 │ →
       ╰───╯
     """
+
     def __init__(self):
         super(F8Key, self).__init__()
         self.name = "F8"
@@ -272,6 +287,7 @@ class F9Key(CharacterKey):
     ← │F9 │
       ╰───╯
     """
+
     def __init__(self):
         super(F9Key, self).__init__()
         self.name = "F9"
@@ -292,6 +308,7 @@ class PrintKey(CharacterKey):
     ← │PRT│
       ╰───╯
     """
+
     def __init__(self):
         super(PrintKey, self).__init__()
         self.name = "PRT"
@@ -305,6 +322,7 @@ class InsertKey(CharacterKey):
     ← │INS│
       ╰───╯
     """
+
     def __init__(self):
         super(InsertKey, self).__init__()
         self.name = "INS"
@@ -318,6 +336,7 @@ class DeleteKey(CharacterKey):
     ← │DEL│
       ╰───╯
     """
+
     def __init__(self):
         super(DeleteKey, self).__init__()
         self.name = "DEL"
@@ -333,7 +352,7 @@ class NumpadDeleteKey(CharacterKey):
 class ArrowLeftKey(CharacterKey):
     def __init__(self):
         super(ArrowLeftKey, self).__init__()
-        self.name = "RAR"
+        self.name = "LAR"
         self.key_base.clearance_left = GlobalConfig.group.clearance_x_f_group
 
 
@@ -357,7 +376,7 @@ class Key100UnitNumpadSpacer(Key):
     def __init__(self) -> None:
         super(Key100UnitNumpadSpacer, self).__init__()
         self.name = "ns100"
-        self.key_base.clearance_left = GlobalConfig.group.clearance_x_f_group
+        self.key_base.clearance_left = GlobalConfig.group.clearance_x_numpad
 
 
 class Key100UnitUpArrowSpacer(Key100UnitSpacer):
