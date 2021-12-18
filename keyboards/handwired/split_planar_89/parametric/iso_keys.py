@@ -1,3 +1,4 @@
+from types import MethodType
 from keys import *
 
 
@@ -141,8 +142,36 @@ class IsoEnterKey(Key150Unit):
     def __init__(self):
         self.name = "ENT"
         super(IsoEnterKey, self).__init__()
-        self.key_base.unit_depth_factor = 2
-        self.key_base._position_offset = [0, - GlobalConfig.key_base.unit_length / 2, 0]
+        self.set_unit_depth_factor(2)
+        self.key_base.position_offset = [0, - GlobalConfig.key_base.unit_length / 2, 0]
+
+        def get_cad_object(self, outer_self=self) -> cadquery.Workplane:
+            upper_part = cadquery.Workplane() \
+                .wedge(self.width,
+                       self.thickness,
+                       outer_self.key_base.unit_length - self.depth_clearance,
+                       1,
+                       1,
+                       self.width - 1, outer_self.key_base.unit_length - self.depth_clearance,
+                       centered=[True, False, True]) \
+                .rotate((0, 0, 0), (1, 0, 0), 90).translate((0, outer_self.key_base.unit_length / 2, self.z_clearance))
+
+            x, _y, _z = upper_part.vertices(">Y").val().toTuple()
+            lower_part = cadquery.Workplane() \
+                .wedge(outer_self.key_base.unit_length * 1.25 - self.depth_clearance,
+                       self.thickness,
+                       outer_self.key_base.unit_length , 1, 0,
+                       outer_self.key_base.unit_length * 1.25 - self.depth_clearance - 1,
+                       outer_self.key_base.unit_length - 1,
+                       centered=[True, False, True]) \
+                .rotate((0, 0, 0), (1, 0, 0), 90)\
+                .translate((-x -(outer_self.key_base.unit_length * 1.25 - self.depth_clearance)/2,
+                            -outer_self.key_base.unit_length + outer_self.key_base.unit_length / 2 + self.depth_clearance,
+                            self.z_clearance))
+
+            return upper_part.union(lower_part)
+
+        self.cap.get_cad_object = MethodType(get_cad_object, self.cap)
 
 
 class IsoNumpadEnterKey(Key100Unit):
@@ -158,8 +187,8 @@ class IsoNumpadEnterKey(Key100Unit):
     def __init__(self):
         self.name = "NENT"
         super(IsoNumpadEnterKey, self).__init__()
-        self.key_base.unit_depth_factor = 2
-        self.key_base._position_offset = [0, - GlobalConfig.key_base.unit_length / 2, 0]
+        self.set_unit_depth_factor(2)
+        self.key_base.position_offset = [0, - GlobalConfig.key_base.unit_length / 2, 0]
 
 
 class IsoNumpadPlusKey(Key100Unit):
@@ -175,8 +204,8 @@ class IsoNumpadPlusKey(Key100Unit):
     def __init__(self):
         self.name = "NPLUS"
         super(IsoNumpadPlusKey, self).__init__()
-        self.key_base.unit_depth_factor = 2
-        self.key_base._position_offset = [0, - GlobalConfig.key_base.unit_length / 2, 0]
+        self.set_unit_depth_factor(2)
+        self.key_base.position_offset = [0, - GlobalConfig.key_base.unit_length / 2, 0]
 
 
 class IsoNumpadInsKey(Key200Unit):

@@ -44,9 +44,10 @@ class KeyCapConfig(object):
 
     def __init__(self):
         # ensure that: width + clearance + clearance == unit_length
-        self.width = 18.0  # type: float
-        self.depth = 18.0  # type: float
+        self.width_clearance = 2  # type: float
+        self.depth_clearance = 2  # type: float
         self.thickness = 9.0  # type: float
+        self.z_clearance = 6.0  # type: float
 
 
 class KeySwitchConfig(object):

@@ -5,9 +5,7 @@ from typing import Tuple
 from utils import *
 from iso_keys import *
 from iso_matrix import build_keyboard_matrix
-
 import cadquery as cq
-
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -20,7 +18,6 @@ pc_0 = perf_counter()
 
 
 def construct_key_placement():
-    c = cq.Workplane("XY")
     last_row = None
     last_key = None
     row_idx = 0
@@ -45,6 +42,8 @@ def construct_key_placement():
 
             key.compute()
             objects.append((key, key.cad_objects.plane))
+            if key.key_base.is_visible:
+                objects.append((key, key.cad_objects.key_cap))
             print("  {:2} |{:6.2f}{:6.2f}{:6.2f}|{:5} {:4.2f}|{:5.2f} {:5.2f} {:5.2f} {:5.2f}|{:6.2f} {:5.2f} {:5.2f}|{}"
                   .format(col_idx,
                           key.key_base.position[0], key.key_base.position[1], key.key_base.position[2],

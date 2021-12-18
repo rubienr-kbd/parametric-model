@@ -31,20 +31,22 @@ class Computeable(object):
         """
         Computes object and cad object
         """
-        pass
+        if hasattr(self, "width") and hasattr(self, "depth"):
+            if hasattr(self, "thickness"):
+                self._cad_object = cadquery.Workplane().box(self.width, self.depth, self.thickness)
+            else:
+                self._cad_object = cadquery.Workplane().rect(self.width, self.depth)
+        else:
+            assert False
 
 
 class CadObject(object):
-    def get_cad_object(self) -> cadquery.Workplane:
+    def get_cad_object(self: Computeable) -> cadquery.Workplane:
         """
         If not re-implemented returns a bounding rect/box of the object.
         """
-        if hasattr(self, "width") and hasattr(self, "depth"):
-            if hasattr(self, "thickness"):
-                return cadquery.Workplane().box(self.width, self.depth, self.thickness)
-            return cadquery.Workplane().rect(self.width, self.depth)
-        assert False
-
+        assert hasattr(self, "_cad_object") and self._cad_object is not None
+        return self._cad_object
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
