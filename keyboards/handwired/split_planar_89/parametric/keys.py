@@ -1,7 +1,9 @@
-from typing import List, Optional
+from typing import Optional, Tuple
+
 from cadquery import Shape
 from config import *
 from key_mixins import *
+import cadquery
 
 """
 Indexing and terms:
@@ -52,8 +54,8 @@ class KeyBase(KeyPlane, Computeable, CadObject, KeyBaseMixin):
     def __init__(self, config: KeyBaseConfig) -> None:
         super(KeyBase, self).__init__()
         self.unit_length = config.unit_length  # type: float
-        self.unit_width_factor = 1.0  # type: float
-        self.unit_depth_factor = 1.0  # type: float
+        self.unit_width_factor = 1  # type: float
+        self.unit_depth_factor = 1  # type: float
         self.clearance_left = config.clearance_x  # type: float
         self.clearance_right = config.clearance_x  # type: float
         self.clearance_top = config.clearance_y  # type: float
@@ -68,21 +70,21 @@ class KeyBase(KeyPlane, Computeable, CadObject, KeyBaseMixin):
 class KeyCap(KeyBox, Computeable, CadObject):
     def __init__(self, config: KeyCapConfig) -> None:
         super(KeyCap, self).__init__()
-        self.unit_width_factor = 1.0  # type: float
-        self.unit_depth_factor = 1.0  # type: float
         self.width_clearance = config.width_clearance  # type: float
         self.depth_clearance = config.depth_clearance  # type: float
-        self.width = 0.0  # type: float
-        self.depth = 0.0  # type: float
         self.thickness = config.thickness  # type: float
         self.z_clearance = config.z_clearance  # type: float
         self.dish_inset = config.dish_inset  # type: float
+        self.width = 0  # type: float
+        self.depth = 0  # type: float
 
-    def update(self) -> None:
-        self.width = self.unit_width_factor * GlobalConfig.key_base.unit_length - self.width_clearance
-        self.depth = self.unit_depth_factor * GlobalConfig.key_base.unit_length - self.depth_clearance
+    def update(self, unit_width_factor: float = 1, unit_depth_factor: float = 1, unit_length: float = GlobalConfig.key_base.unit_length, *args, **kwargs) -> None:
+        self.width = unit_width_factor * unit_length - self.width_clearance
+        self.depth = unit_depth_factor * unit_length - self.depth_clearance
 
-    def compute(self) -> None:
+    def compute(self, position: Tuple[float, float, float], position_offset: Tuple[float, float, float], *args, **kwargs) -> None:
+        t = tuple([a + b + c for a, b, c in zip((0, 0, self.z_clearance), position, position_offset)])
+        displacement = (t[0], t[1], t[2])  # type: Tuple[float, float, float]
         self._cad_object = cadquery.Workplane() \
             .wedge(self.width,
                    self.thickness,
@@ -91,11 +93,13 @@ class KeyCap(KeyBox, Computeable, CadObject):
                    1,
                    self.width - 1,
                    self.depth - 1,
-                   centered=[True, False, True]) \
-            .rotate((0, 0, 0), (1, 0, 0), 90).translate((0, 0, self.z_clearance))
+                   centered=(True, False, True)) \
+            .rotate((0, 0, 0), (1, 0, 0), 90) \
+            .translate(displacement)
 
 
 class KeySwitch(KeyBox, Computeable, CadObject):
+
     def __init__(self, config: KeySwitchConfig) -> None:
         super(KeySwitch, self).__init__()
         self.width = config.width  # type: float
@@ -114,6 +118,7 @@ class KeySwitchSlot(KeyBox, Computeable, CadObject):
 class CadObjects(object):
     def __init__(self):
         self.plane = None  # type: Optional[Shape]
+        self.origin = None  # type: Optional[Shape]
         self.key_name = None  # type: Optional[Shape]
         self.key_cap = None  # type: Optional[Shape]
         self.switch = None  # type: Optional[Shape]
@@ -131,18 +136,23 @@ class Key(Computeable, CadKeyMixin):
 
     def update(self):
         self.key_base.update()
-        self.cap.update()
+        self.cap.update(unit_width_factor=self.key_base.unit_width_factor, unit_depth_factor=self.key_base.unit_depth_factor, unit_length=self.key_base.unit_length)
         self.switch.update()
         self.switch_slot.update()
 
     def compute(self):
         self.key_base.compute()
-        self.post_compute_cad_key_base()
-        self.cad_objects.plane = self.key_base.get_cad_object()
+        if GlobalConfig.debug.render_key_placement:
+            self.post_compute_cad_key_base()
+            self.cad_objects.plane = self.key_base.get_cad_object()
 
-        self.cad_objects.key_name = self.post_compute_key_base_name()
+        if GlobalConfig.debug.render_key_name:
+            self.cad_objects.key_name = self.post_compute_key_base_name()
 
-        self.cap.compute()
+        if GlobalConfig.debug.render_origins:
+            self.cad_objects.origin = self.post_compute_key_base_origin()
+
+        self.cap.compute(position=self.key_base.position, position_offset=self.key_base.position_offset)
         self.post_compute_cad_cap()
         self.cad_objects.key_cap = self.cap.get_cad_object()
 
@@ -156,11 +166,9 @@ class Key(Computeable, CadKeyMixin):
 
     def set_unit_width_factor(self, factor: float) -> None:
         self.key_base.unit_width_factor = factor
-        self.cap.unit_width_factor = factor
 
     def set_unit_depth_factor(self, factor: float) -> None:
         self.key_base.unit_depth_factor = factor
-        self.cap.unit_depth_factor = factor
 
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

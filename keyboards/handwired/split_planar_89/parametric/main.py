@@ -41,10 +41,15 @@ def construct_key_placement():
             last_key = key
 
             key.compute()
-            objects.append((key, key.cad_objects.plane))
-            objects.append((key, key.cad_objects.key_name))
-            if key.key_base.is_visible:
+            if GlobalConfig.debug.render_key_placement:
+                objects.append((key, key.cad_objects.plane))
+            if GlobalConfig.debug.render_key_name:
+                objects.append((key, key.cad_objects.key_name))
+            if GlobalConfig.debug.render_key_cap and key.key_base.is_visible:
                 objects.append((key, key.cad_objects.key_cap))
+            if GlobalConfig.debug.render_origins:
+                objects.append((key, key.cad_objects.origin))
+
             print("  {:2} |{:6.2f}{:6.2f}{:6.2f}|{:5} {:4.2f}|{:5.2f} {:5.2f} {:5.2f} {:5.2f}|{:6.2f} {:5.2f} {:5.2f}|{}"
                   .format(col_idx,
                           key.key_base.position[0], key.key_base.position[1], key.key_base.position[2],

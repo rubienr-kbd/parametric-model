@@ -21,15 +21,17 @@ class Direction(Enum):
 
 class Computeable(object):
 
-    def update(self) -> None:
+    def update(self, *args, **kwargs) -> None:
         """
         Resolves/computes input data dependencies for compute().
         """
         pass
 
-    def compute(self) -> None:
+    def compute(self, *args, **kwargs) -> None:
         """
         Computes object and cad object
+          - py object: noop
+          - cad object: bounding rect/box of the object
         """
         if hasattr(self, "width") and hasattr(self, "depth"):
             if hasattr(self, "thickness"):
@@ -41,9 +43,13 @@ class Computeable(object):
 
 
 class CadObject(object):
-    def get_cad_object(self: Computeable) -> cadquery.Workplane:
+
+    def __init__(self):
+        self._cad_object = None
+
+    def get_cad_object(self: Computeable, *args, **kwargs) -> cadquery.Workplane:
         """
-        If not re-implemented returns a bounding rect/box of the object.
+        If not re-implemented returns the pre-computed _cad_object property.
         """
         assert hasattr(self, "_cad_object") and self._cad_object is not None
         return self._cad_object
@@ -54,23 +60,23 @@ class CadObject(object):
 
 class KeyRect(object):
     def __init__(self):
-        self.width = 0.0  # type: float
-        self.depth = 0.0  # type: float
+        self.width = 0  # type: float
+        self.depth = 0  # type: float
 
 
 class KeyBox(KeyRect):
     def __init__(self):
         super(KeyBox, self).__init__()
-        self.thickness = 0.0  # type: float
+        self.thickness = 0  # type: float
 
 
 class KeyPlane(KeyRect):
     def __init__(self):
         super(KeyPlane, self).__init__()
-        self.position = [0.0, 0.0, 0.0]  # type: List[float, float, float]
-        self.position_offset = [0.0, 0.0, 0.0]  # type: List[float, float, float]
-        self.rotation = [0.0, 0.0, 0.0]  # type: List[float, float, float]
-        self.rotation_offset = [0.0, 0.0, 0.0]  # type: List[float, float, float]
+        self.position = (0, 0, 0)  # type: Tuple[float, float, float]
+        self.position_offset = (0, 0, 0)  # type: Tuple[float, float, float]
+        self.rotation = (0, 0, 0)  # type: Tuple[float, float, float]
+        self.rotation_offset = (0, 0, 0)  # type: Tuple[float, float, float]
 
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -79,20 +85,28 @@ class KeyBaseMixin(object):
 
     def align_to_position(self: Union[KeyPlane, KeyBox], position: float, pos: Direction) -> None:
         """
-        Aligns our bounding box top/bottom left/right front/top to position (x, y or z-axis).
+        Aligns our position top/bottom, left/right or front/top face to x (left/right), y (front/back) or z-axis (top/bottom).
         """
+        result = list(self.position)  # type: List[float]
+
         if pos == Direction.TOP:
-            self.position[2] = position - self.thickness / 2
+            result[2] = position - self.thickness / 2
         elif pos == Direction.BOTTOM:
-            self.position[2] = position + self.thickness / 2
+            result[2] = position + self.thickness / 2
+
         elif pos == Direction.RIGHT:
-            self.position[0] = position - self.width / 2
+            result[0] = position - self.width / 2
         elif pos == Direction.LEFT:
-            self.position[0] = position + self.width / 2
+            result[0] = position + self.width / 2
+
         elif pos == Direction.FRONT:
-            self.position[1] = position + self.depth / 2
+            result[1] = position + self.depth / 2
         elif pos == Direction.BACK:
-            self.position[1] = position - self.depth / 2
+            result[1] = position - self.depth / 2
+        else:
+            assert False
+
+        self.position = tuple(result)
 
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -106,26 +120,27 @@ class CadKeyMixin(object):
             .translate(tuple(self.key_base.position_offset)) \
             .tag("{}".format("key_base" if self.key_base.is_visible else "key_base_invisible"))
 
-    def post_compute_key_base_name(self) -> cadquery.Workplane:
-        return self.key_base.get_cad_object().faces().text(self.name, 5, 1).faces("<Z") \
-            .translate(tuple(self.key_base.position)) \
-            .translate(tuple(self.key_base.position_offset)) \
-            .tag("{}".format("name" if self.key_base.is_visible else "name_invisible"))
+    @staticmethod
+    def tag(cad_object: cadquery.Workplane, is_visible: bool, tag_text: str) -> cadquery.Workplane:
+        return cad_object.tag("{}{}".format(tag_text, "_invisible" if not is_visible else ""))
 
-    def post_compute_cad_cap(self) -> None:
-        self.cap._cad_object = self.cap.get_cad_object() \
+    def post_compute_key_base_name(self) -> cadquery.Workplane:
+        o = self.key_base.get_cad_object().faces().text(self.name, 5, 1).faces("<Z").wires() \
             .translate(tuple(self.key_base.position)) \
-            .translate(tuple(self.key_base.position_offset)) \
-            .tag("{}".format("cap" if self.key_base.is_visible else "cap_invisible"))
+            .translate(tuple(self.key_base.position_offset))
+        return CadKeyMixin.tag(o, self.key_base.is_visible, "name")
+
+    def post_compute_key_base_origin(self) -> cadquery.Workplane:
+        o = self.key_base.get_cad_object().faces().circle(0.5).extrude(1).faces("<Z").edges("not %Line") \
+            .translate(tuple(self.key_base.position)) \
+            .translate(tuple(self.key_base.position_offset))
+        return CadKeyMixin.tag(o, self.key_base.is_visible, "origin")
+
+    def post_compute_cad_cap(self):
+        self.cap._cad_object = CadKeyMixin.tag(self.cap._cad_object, self.key_base.is_visible, "cap")
 
     def post_compute_cad_switch(self) -> None:
-        self.switch._cad_object = self.switch.get_cad_object() \
-            .translate(tuple(self.key_base.position)) \
-            .translate(tuple(self.key_base.position_offset)) \
-            .tag("{}".format("switch" if self.key_base.is_visible else "switch_invisible"))
+        self.switch._cad_object = CadKeyMixin.tag(self.cap._cad_object, self.key_base.is_visible, "switch")
 
     def post_compute_cad_switch_slot(self) -> None:
-        self.switch_slot._cad_object = self.switch_slot.get_cad_object() \
-            .translate(tuple(self.key_base.position)) \
-            .translate(tuple(self.key_base.position_offset)) \
-            .tag("{}".format("switch_slot" if self.key_base.is_visible else "switch_slot_invisible"))
+        self.switch_slot._cad_object = CadKeyMixin.tag(self.cap._cad_object, self.key_base.is_visible, "switch_slot")

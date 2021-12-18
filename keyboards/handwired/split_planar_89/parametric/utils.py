@@ -11,19 +11,32 @@ class KeyUtils(object):
         """
         Defines the key position as top/bottom left/right of the reference key.
         """
+        position = None  # type: Optional[Tuple[float,float,float]]
         if pos == Direction.TOP:
-            key.position[1] = ref_key.position[1] + ref_key.depth / 2 + ref_key.clearance_top + key.clearance_bottom + key.depth / 2
-            key.position[0] = ref_key.position[0]
+            position = (
+                ref_key.position[0],
+                ref_key.position[1] + ref_key.depth / 2 + ref_key.clearance_top + key.clearance_bottom + key.depth / 2,
+                key.position[2])
+
         elif pos == Direction.BOTTOM:
-            key.position[1] = ref_key.position[1] - ref_key.depth / 2 - ref_key.clearance_bottom - key.clearance_top - key.depth / 2
-            key.position[0] = ref_key.position[0]
+            position = (
+                ref_key.position[0],
+                ref_key.position[1] - ref_key.depth / 2 - ref_key.clearance_bottom - key.clearance_top - key.depth / 2,
+                key.position[2])
 
         elif pos == Direction.RIGHT:
-            key.position[0] = ref_key.position[0] + ref_key.width / 2 + ref_key.clearance_right + key.clearance_left + key.width / 2
-            key.position[1] = ref_key.position[1]
+            position = (
+                ref_key.position[0] + ref_key.width / 2 + ref_key.clearance_right + key.clearance_left + key.width / 2,
+                ref_key.position[1],
+                key.position[2])
+
         elif pos == Direction.LEFT:
-            key.position[0] = ref_key.position[0] - ref_key.width / 2 - ref_key.clearance_left - key.clearance_right - key.width / 2
-            key.position[1] = ref_key.position[1]
+            position = (
+                ref_key.position[0] - ref_key.width / 2 - ref_key.clearance_left - key.clearance_right - key.width / 2,
+                ref_key.position[1],
+                key.position[2])
 
         else:
             assert False
+
+        key.position = position

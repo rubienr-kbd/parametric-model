@@ -146,7 +146,10 @@ class IsoEnterKey(Key150Unit):
         self.set_unit_depth_factor(2)
         self.key_base.position_offset = [0, - GlobalConfig.key_base.unit_length / 2, 0]
 
-        def compute(self, outer_self=self) -> None:
+        def compute(self, position: Tuple[float, float, float], position_offset: Tuple[float, float, float], outer_self=self, *args, **kwargs) -> None:
+            t = tuple([a + b for a, b in zip(position, position_offset)])
+            displacement = (t[0], t[1], t[2])  # type: Tuple[float, float, float]
+
             upper_part = cadquery.Workplane() \
                 .wedge(self.width,
                        self.thickness,
@@ -157,7 +160,8 @@ class IsoEnterKey(Key150Unit):
                        outer_self.key_base.unit_length - self.depth_clearance - self.dish_inset,
                        centered=(True, False, True)) \
                 .rotate((0, 0, 0), (1, 0, 0), 90) \
-                .translate((0, outer_self.key_base.unit_length / 2, self.z_clearance))
+                .translate((0, outer_self.key_base.unit_length / 2, self.z_clearance)) \
+                .translate(displacement)
 
             lower_part = cadquery.Workplane() \
                 .wedge(outer_self.key_base.unit_length * 1.25 - self.depth_clearance,
@@ -171,7 +175,8 @@ class IsoEnterKey(Key150Unit):
                 .rotate((0, 0, 0), (1, 0, 0), 90) \
                 .translate(((2 - 1.25) / 2 * (outer_self.key_base.unit_length - self.width_clearance / 2) / 2 - self.width_clearance / 2,
                             self.depth_clearance / 2,
-                            self.z_clearance))
+                            self.z_clearance)) \
+                .translate(displacement)
 
             self._cad_object = upper_part.union(lower_part)
 
