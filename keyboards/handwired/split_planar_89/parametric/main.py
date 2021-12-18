@@ -42,6 +42,7 @@ def construct_key_placement():
 
             key.compute()
             objects.append((key, key.cad_objects.plane))
+            objects.append((key, key.cad_objects.key_name))
             if key.key_base.is_visible:
                 objects.append((key, key.cad_objects.key_cap))
             print("  {:2} |{:6.2f}{:6.2f}{:6.2f}|{:5} {:4.2f}|{:5.2f} {:5.2f} {:5.2f} {:5.2f}|{:6.2f} {:5.2f} {:5.2f}|{}"

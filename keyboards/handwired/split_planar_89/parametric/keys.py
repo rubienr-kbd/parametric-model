@@ -82,9 +82,16 @@ class KeyCap(KeyBox, Computeable, CadObject):
         self.width = self.unit_width_factor * GlobalConfig.key_base.unit_length - self.width_clearance
         self.depth = self.unit_depth_factor * GlobalConfig.key_base.unit_length - self.depth_clearance
 
-    def compute(self) -> cadquery.Workplane:
+    def compute(self) -> None:
         self._cad_object = cadquery.Workplane() \
-            .wedge(self.width, self.thickness, self.depth, 1, 1, self.width - 1, self.depth - 1, centered=[True, False, True]) \
+            .wedge(self.width,
+                   self.thickness,
+                   self.depth,
+                   1,
+                   1,
+                   self.width - 1,
+                   self.depth - 1,
+                   centered=[True, False, True]) \
             .rotate((0, 0, 0), (1, 0, 0), 90).translate((0, 0, self.z_clearance))
 
 
@@ -107,6 +114,7 @@ class KeySwitchSlot(KeyBox, Computeable, CadObject):
 class CadObjects(object):
     def __init__(self):
         self.plane = None  # type: Optional[Shape]
+        self.key_name = None  # type: Optional[Shape]
         self.key_cap = None  # type: Optional[Shape]
         self.switch = None  # type: Optional[Shape]
         self.slot = None  # type: Optional[Shape]
@@ -129,13 +137,22 @@ class Key(Computeable, CadKeyMixin):
 
     def compute(self):
         self.key_base.compute()
-        self.cad_objects.plane = self.get_cad_key_base()
+        self.post_compute_cad_key_base()
+        self.cad_objects.plane = self.key_base.get_cad_object()
+
+        self.cad_objects.key_name = self.post_compute_key_base_name()
+
         self.cap.compute()
-        self.cad_objects.key_cap = self.get_cad_cap()
+        self.post_compute_cad_cap()
+        self.cad_objects.key_cap = self.cap.get_cad_object()
+
         self.switch.compute()
-        self.cad_objects.switch = self.get_cad_switch()
+        self.post_compute_cad_switch()
+        self.cad_objects.switch = self.switch.get_cad_object()
+
         self.switch_slot.compute()
-        self.cad_objects.slot = self.get_cad_switch_slot()
+        self.post_compute_cad_switch_slot()
+        self.cad_objects.slot = self.switch_slot.get_cad_object()
 
     def set_unit_width_factor(self, factor: float) -> None:
         self.key_base.unit_width_factor = factor
@@ -158,14 +175,14 @@ class Key100Unit(Key):
 class Key100UnitSpacer(Key):
     def __init__(self) -> None:
         super(Key100UnitSpacer, self).__init__()
-        self.name = "us100"
+        self.name = "su100"
         self.key_base.is_visible = False
 
 
 class Key125UnitSpacer(Key):
     def __init__(self) -> None:
         super(Key125UnitSpacer, self).__init__()
-        self.name = "us125"
+        self.name = "su125"
         self.set_unit_width_factor(1.25)
         self.key_base.is_visible = False
 

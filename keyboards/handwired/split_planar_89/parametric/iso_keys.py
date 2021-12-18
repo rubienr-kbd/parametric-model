@@ -12,7 +12,7 @@ from keys import *
 class CharacterKey(Key100Unit):
     def __init__(self):
         super(CharacterKey, self).__init__()
-        self.name = "char"
+        self.name = "ch"
 
 
 class TabKey(Key150Unit):
@@ -69,15 +69,15 @@ class RightShiftKey(Key275Unit):
         self.name = "RSFT"
 
 
-class LeftMenulKey(Key125Unit):
+class LeftOsKey(Key125Unit):
     def __init__(self):
-        super(LeftMenulKey, self).__init__()
-        self.name = "LMEN"
+        super(LeftOsKey, self).__init__()
+        self.name = "LOS"
 
 
-class RightContextMenulKey(Key125Unit):
+class RightMenulKey(Key125Unit):
     def __init__(self):
-        super(RightContextMenulKey, self).__init__()
+        super(RightMenulKey, self).__init__()
         self.name = "MENU"
 
 
@@ -141,12 +141,12 @@ class IsoEnterKey(Key150Unit):
     """
 
     def __init__(self):
-        self.name = "ENT"
         super(IsoEnterKey, self).__init__()
+        self.name = "ENT"
         self.set_unit_depth_factor(2)
         self.key_base.position_offset = [0, - GlobalConfig.key_base.unit_length / 2, 0]
 
-        def get_cad_object(self, outer_self=self) -> cadquery.Workplane:
+        def compute(self, outer_self=self) -> None:
             upper_part = cadquery.Workplane() \
                 .wedge(self.width,
                        self.thickness,
@@ -173,9 +173,9 @@ class IsoEnterKey(Key150Unit):
                             self.depth_clearance / 2,
                             self.z_clearance))
 
-            return upper_part.union(lower_part)
+            self._cad_object = upper_part.union(lower_part)
 
-        self.cap.get_cad_object = MethodType(get_cad_object, self.cap)
+        self.cap.compute = MethodType(compute, self.cap)
 
 
 class IsoNumpadEnterKey(Key100Unit):
@@ -189,8 +189,8 @@ class IsoNumpadEnterKey(Key100Unit):
     """
 
     def __init__(self):
-        self.name = "NENT"
         super(IsoNumpadEnterKey, self).__init__()
+        self.name = "NENT"
         self.set_unit_depth_factor(2)
         self.key_base.position_offset = [0, - GlobalConfig.key_base.unit_length / 2, 0]
 
@@ -206,8 +206,8 @@ class IsoNumpadPlusKey(Key100Unit):
     """
 
     def __init__(self):
-        self.name = "NPLUS"
         super(IsoNumpadPlusKey, self).__init__()
+        self.name = "NPLU"
         self.set_unit_depth_factor(2)
         self.key_base.position_offset = [0, - GlobalConfig.key_base.unit_length / 2, 0]
 
@@ -221,8 +221,8 @@ class IsoNumpadInsKey(Key200Unit):
     """
 
     def __init__(self):
-        self.name = "NINS"
         super(IsoNumpadInsKey, self).__init__()
+        self.name = "NINS"
         self.key_base.clearance_left = GlobalConfig.group.clearance_x_numpad
 
 

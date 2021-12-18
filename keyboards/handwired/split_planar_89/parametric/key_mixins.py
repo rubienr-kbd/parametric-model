@@ -48,6 +48,7 @@ class CadObject(object):
         assert hasattr(self, "_cad_object") and self._cad_object is not None
         return self._cad_object
 
+
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -99,33 +100,32 @@ class KeyBaseMixin(object):
 
 class CadKeyMixin(object):
 
-    def get_cad_key_base(self) -> cadquery.Workplane:
-        key_base = self.key_base  # type: Union[KeyPlane, CadObject]
-        return key_base.get_cad_object() \
-            .translate(tuple(key_base.position)) \
-            .translate(tuple(key_base.position_offset)) \
-            .tag("{}".format("key_base" if key_base.is_visible else "key_base_invisible"))
+    def post_compute_cad_key_base(self) -> None:
+        self.key_base._cad_object = self.key_base.get_cad_object() \
+            .translate(tuple(self.key_base.position)) \
+            .translate(tuple(self.key_base.position_offset)) \
+            .tag("{}".format("key_base" if self.key_base.is_visible else "key_base_invisible"))
 
-    def get_cad_cap(self) -> cadquery.Workplane:
-        cap = self.cap  # type: Union[KeyBox, CadObject]
-        key_base = self.key_base  # type: KeyPlane
-        return cap.get_cad_object() \
-            .translate(tuple(key_base.position)) \
-            .translate(tuple(key_base.position_offset)) \
-            .tag("{}".format("cap" if key_base.is_visible else "cap_invisible"))
+    def post_compute_key_base_name(self) -> cadquery.Workplane:
+        return self.key_base.get_cad_object().faces().text(self.name, 5, 1).faces("<Z") \
+            .translate(tuple(self.key_base.position)) \
+            .translate(tuple(self.key_base.position_offset)) \
+            .tag("{}".format("name" if self.key_base.is_visible else "name_invisible"))
 
-    def get_cad_switch(self) -> cadquery.Workplane:
-        switch = self.switch  # type: Union[KeyBox, CadObject]
-        key_base = self.key_base  # type: KeyPlane
-        return switch.get_cad_object() \
-            .translate(tuple(key_base.position)) \
-            .translate(tuple(key_base.position_offset)) \
-            .tag("{}".format("switch" if key_base.is_visible else "switch_invisible"))
+    def post_compute_cad_cap(self) -> None:
+        self.cap._cad_object = self.cap.get_cad_object() \
+            .translate(tuple(self.key_base.position)) \
+            .translate(tuple(self.key_base.position_offset)) \
+            .tag("{}".format("cap" if self.key_base.is_visible else "cap_invisible"))
 
-    def get_cad_switch_slot(self) -> cadquery.Workplane:
-        switch_slot = self.switch_slot  # type: Union[KeyBox, CadObject]
-        key_base = self.key_base  # type: KeyPlane
-        return switch_slot.get_cad_object() \
-            .translate(tuple(key_base.position)) \
-            .translate(tuple(key_base.position_offset)) \
-            .tag("{}".format("switch_slot" if key_base.is_visible else "switch_slot_invisible"))
+    def post_compute_cad_switch(self) -> None:
+        self.switch._cad_object = self.switch.get_cad_object() \
+            .translate(tuple(self.key_base.position)) \
+            .translate(tuple(self.key_base.position_offset)) \
+            .tag("{}".format("switch" if self.key_base.is_visible else "switch_invisible"))
+
+    def post_compute_cad_switch_slot(self) -> None:
+        self.switch_slot._cad_object = self.switch_slot.get_cad_object() \
+            .translate(tuple(self.key_base.position)) \
+            .translate(tuple(self.key_base.position_offset)) \
+            .tag("{}".format("switch_slot" if self.key_base.is_visible else "switch_slot_invisible"))

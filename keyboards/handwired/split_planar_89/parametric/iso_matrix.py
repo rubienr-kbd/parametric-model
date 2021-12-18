@@ -10,12 +10,12 @@ def build_key_row_0(size: KeyboardSize):
     """
     r = [
         LeftCtrlKey(),
-        LeftMenulKey(),
+        LeftOsKey(),
         LeftAltKey(),
         SpaceKey(),
         RightAltKey(),
         FnKey(),
-        RightContextMenulKey(),
+        RightMenulKey(),
         RightCtrlKey()]
 
     assert size not in [KeyboardSize.S40, KeyboardSize.S60, KeyboardSize.S65, KeyboardSize.S75]
@@ -139,14 +139,14 @@ def build_key_row_3(size: KeyboardSize):
          CharacterKey(),
          CharacterKey(),
          CharacterKey(),
-         CharacterKey()]
+         CharacterKey(),
+         IsoEnterKey()]
 
     assert size not in [KeyboardSize.S40, KeyboardSize.S60, KeyboardSize.S65, KeyboardSize.S75]
 
     if size.value >= KeyboardSize.S80.value:
         # ins/del 6-key block
         r.extend([
-            IsoEnterKey(),
             DeleteKey(),
             EndKey(),
             PageDown()])
