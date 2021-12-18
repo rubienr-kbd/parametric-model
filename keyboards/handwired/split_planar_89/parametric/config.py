@@ -48,6 +48,7 @@ class KeyCapConfig(object):
         self.depth_clearance = 2  # type: float
         self.thickness = 9.0  # type: float
         self.z_clearance = 6.0  # type: float
+        self.dish_inset = 1.0  # type: float
 
 
 class KeySwitchConfig(object):

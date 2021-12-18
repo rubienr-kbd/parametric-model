@@ -1,4 +1,5 @@
 from types import MethodType
+
 from keys import *
 
 
@@ -150,23 +151,26 @@ class IsoEnterKey(Key150Unit):
                 .wedge(self.width,
                        self.thickness,
                        outer_self.key_base.unit_length - self.depth_clearance,
-                       1,
-                       1,
-                       self.width - 1, outer_self.key_base.unit_length - self.depth_clearance,
-                       centered=[True, False, True]) \
-                .rotate((0, 0, 0), (1, 0, 0), 90).translate((0, outer_self.key_base.unit_length / 2, self.z_clearance))
+                       self.dish_inset,
+                       self.dish_inset,
+                       self.width - self.dish_inset,
+                       outer_self.key_base.unit_length - self.depth_clearance - self.dish_inset,
+                       centered=(True, False, True)) \
+                .rotate((0, 0, 0), (1, 0, 0), 90) \
+                .translate((0, outer_self.key_base.unit_length / 2, self.z_clearance))
 
-            x, _y, _z = upper_part.vertices(">Y").val().toTuple()
             lower_part = cadquery.Workplane() \
                 .wedge(outer_self.key_base.unit_length * 1.25 - self.depth_clearance,
                        self.thickness,
-                       outer_self.key_base.unit_length , 1, 0,
-                       outer_self.key_base.unit_length * 1.25 - self.depth_clearance - 1,
-                       outer_self.key_base.unit_length - 1,
-                       centered=[True, False, True]) \
-                .rotate((0, 0, 0), (1, 0, 0), 90)\
-                .translate((-x -(outer_self.key_base.unit_length * 1.25 - self.depth_clearance)/2,
-                            -outer_self.key_base.unit_length + outer_self.key_base.unit_length / 2 + self.depth_clearance,
+                       outer_self.key_base.unit_length,
+                       self.dish_inset,
+                       - self.dish_inset,
+                       outer_self.key_base.unit_length * 1.25 - self.depth_clearance - self.dish_inset,
+                       outer_self.key_base.unit_length - self.dish_inset,
+                       centered=(True, False, False)) \
+                .rotate((0, 0, 0), (1, 0, 0), 90) \
+                .translate(((2 - 1.25) / 2 * (outer_self.key_base.unit_length - self.width_clearance / 2) / 2 - self.width_clearance / 2,
+                            self.depth_clearance / 2,
                             self.z_clearance))
 
             return upper_part.union(lower_part)

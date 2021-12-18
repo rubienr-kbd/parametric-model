@@ -75,7 +75,8 @@ class KeyCap(KeyBox, Computeable, CadObject):
         self.width = 0.0  # type: float
         self.depth = 0.0  # type: float
         self.thickness = config.thickness  # type: float
-        self.z_clearance = config.z_clearance
+        self.z_clearance = config.z_clearance  # type: float
+        self.dish_inset = config.dish_inset  # type: float
 
     def update(self) -> None:
         self.width = self.unit_width_factor * GlobalConfig.key_base.unit_length - self.width_clearance
@@ -122,7 +123,6 @@ class Key(Computeable, CadKeyMixin):
 
     def update(self):
         self.key_base.update()
-        #self.cap.unit_width_factor = self.key_base.unit_width_factor
         self.cap.update()
         self.switch.update()
         self.switch_slot.update()
@@ -144,6 +144,7 @@ class Key(Computeable, CadKeyMixin):
     def set_unit_depth_factor(self, factor: float) -> None:
         self.key_base.unit_depth_factor = factor
         self.cap.unit_depth_factor = factor
+
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
