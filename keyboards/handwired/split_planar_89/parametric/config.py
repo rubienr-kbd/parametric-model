@@ -28,7 +28,7 @@ class KeyboardSize(Enum):
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-class Debug(object):
+class DebugConfig(object):
     def __init__(self):
         """
         Parameters
@@ -38,13 +38,15 @@ class Debug(object):
         self.show_key_name : renders the key name in the placement face
         self.show_key_cap : renders the key cap
         self.show_key_origin : emphasize each key origin (x/y-center) by small circle
+        self.disable_object_cache : deactivate cad object caching, otherwise re-use pre-computed objects (performance factor about 5)
         """
         self.debug_enable = True  # type: bool
         self.show_placement = True  # type: bool
-        self.show_key_origin = False  # type: bool
+        self.show_key_origin = True  # type: bool
         self.show_key_name = False  # type: bool
-        self.show_key_cap = False  # type: bool
-        self.show_key_switch = False  # type: bool
+        self.show_key_cap = True  # type: bool
+        self.show_key_switch = True  # type: bool
+        self.disable_object_cache = False  # type: bool
 
     @property
     def render_key_placement(self):
@@ -172,14 +174,14 @@ class ArrowGroupConfig(object):
 
 class MatrixConfig(object):
     def __init__(self):
-        layout_size = KeyboardSize.S100  # type: KeyboardSize
+        self.layout_size = KeyboardSize.S100  # type: KeyboardSize
 
 
 class GlobalConfig(object):
     """
     Global configuration.
     """
-    debug = Debug()
+    debug = DebugConfig()
     key_base = KeyBaseConfig()
     cap = KeyCapConfig()
     switch = KeySwitchConfig()
@@ -195,10 +197,10 @@ class GlobalConfig(object):
 def parse_cli_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument("-k", "--keyboard-size", help="keyboard size to generate; influences the layout to compute, not the key size", default=KeyboardSize.S100.name,
+    parser.add_argument("-k", "--keyboard-size", help="keyboard size to generate; influences the layout to compute, not the key size", default=GlobalConfig.matrix.layout_size.name,
                         choices=[e.name for e in KeyboardSize])
     parser.add_argument("-e", "--export", help="export to STEP file (see --filename, --path)", action="store_true")
-    parser.add_argument("-f", "--filename", help=".step file name", default="split-planar-{}.step".format(KeyboardSize.S80.name), type=str)
+    parser.add_argument("-f", "--filename", help=".step file name", default="split-planar-{}.step".format(GlobalConfig.matrix.layout_size.name), type=str)
     parser.add_argument("-p", "--path", help="path where to export", default="./", type=str)
 
     args = parser.parse_args()

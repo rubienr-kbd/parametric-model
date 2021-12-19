@@ -1,4 +1,4 @@
-from typing import Union, List
+from typing import Union, List, Tuple
 from enum import Enum
 
 import cadquery
@@ -125,18 +125,28 @@ class CadKeyMixin(object):
         self.base._cad_object = CadKeyMixin.tag(self.base.get_cad_object(), self.base.is_visible, "key_base")
 
     def post_compute_key_base_name(self) -> cadquery.Workplane:
-        o = self.base.get_cad_object().faces() \
-            .text(self.name, 5, 1).faces("<Z").wires() \
+        o = self.object_cache.get("name", self.name)
+        if o is None:
+            o = self.base.get_cad_object().faces() \
+                .text(self.name, 5, 1).faces("<Z").wires()
+            o = CadKeyMixin.tag(o, self.base.is_visible, "name")
+            self.object_cache.store(o, "name", self.name)
+
+        return o \
             .translate(tuple(self.base.position)) \
             .translate(tuple(self.base.position_offset))
-        return CadKeyMixin.tag(o, self.base.is_visible, "name")
 
     def post_compute_key_base_origin(self) -> cadquery.Workplane:
-        o = self.base.get_cad_object().faces() \
-            .circle(0.5).extrude(1).faces("<Z").edges("not %Line") \
+        o = self.object_cache.get("origin", self.name)
+        if o is None:
+            o = self.base.get_cad_object().faces() \
+                .circle(0.5).extrude(1).faces("<Z").edges("not %Line")
+            o = CadKeyMixin.tag(o, self.base.is_visible, "origin")
+            self.object_cache.store(o, "origin", self.name)
+
+        return o \
             .translate(tuple(self.base.position)) \
             .translate(tuple(self.base.position_offset))
-        return CadKeyMixin.tag(o, self.base.is_visible, "origin")
 
     def post_compute_cad_cap(self):
         self.cap._cad_object = self.cap.get_cad_object() \

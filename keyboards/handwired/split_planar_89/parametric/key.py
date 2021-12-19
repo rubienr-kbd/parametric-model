@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Dict
 
 from cadquery import Shape
 from config import *
@@ -73,6 +73,38 @@ Construction strategy:
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+class ObjectCache(object):
+
+    def __init__(self, config: DebugConfig):
+        self.container = dict()  # type: Dict[str, cadquery.Workplane]
+        self.enabled = not config.disable_object_cache
+
+    @staticmethod
+    def cache_name(attr_1: str, attr_2: str = "0", attr_3: str = "0") -> str:
+        return "{}-{}-{}".format(attr_1, attr_2, attr_3)
+
+    def store(self, obj: cadquery.Workplane, attr_1: str, attr_2: str = "0", attr_3: str = "0") -> None:
+        if not self.enabled:
+            return
+
+        key = ObjectCache.cache_name(attr_1, attr_2, attr_3)
+
+        if key in self.container:
+            print("failed to cache object with id {}".format(key))
+            assert False
+        self.container[key] = obj
+
+    def get(self, attr_1: str, attr_2: str = "0", attr_3: str = "0") -> Optional[cadquery.Workplane]:
+        if not self.enabled:
+            return None
+        else:
+            key = ObjectCache.cache_name(attr_1, attr_2, attr_3)
+            if key in self.container:
+                return self.container[key] if key in self.container else None
+
+
+# ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 
 class KeyBase(KeyPlane, Computeable, CadObject, KeyBaseMixin):
     def __init__(self, config: KeyBaseConfig) -> None:
@@ -91,6 +123,8 @@ class KeyBase(KeyPlane, Computeable, CadObject, KeyBaseMixin):
         self.depth = self.unit_depth_factor * self.unit_length
 
 
+# ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 class KeyCap(KeyBox, Computeable, CadObject):
     def __init__(self, config: KeyCapConfig) -> None:
         super(KeyCap, self).__init__()
@@ -106,19 +140,27 @@ class KeyCap(KeyBox, Computeable, CadObject):
         self.width = unit_width_factor * unit_length - self.width_clearance
         self.depth = unit_depth_factor * unit_length - self.depth_clearance
 
-    def compute(self, *args, **kwargs) -> None:
-        displacement = (0, 0, self.z_clearance)  # type: Tuple[float, float, float]
-        self._cad_object = cadquery.Workplane() \
-            .wedge(self.width,
-                   self.thickness,
-                   self.depth,
-                   1,
-                   1,
-                   self.width - 1,
-                   self.depth - 1,
-                   centered=(True, False, True)) \
-            .rotate((0, 0, 0), (1, 0, 0), 90) \
-            .translate(displacement)
+    def compute(self, cache: ObjectCache, *args, **kwargs) -> None:
+        cached = cache.get("cap", str(self.width), str(self.depth))
+        if cached is None:
+            displacement = (0, 0, self.z_clearance)  # type: Tuple[float, float, float]
+            self._cad_object = cadquery.Workplane() \
+                .wedge(self.width,
+                       self.thickness,
+                       self.depth,
+                       1,
+                       1,
+                       self.width - 1,
+                       self.depth - 1,
+                       centered=(True, False, True)) \
+                .rotate((0, 0, 0), (1, 0, 0), 90) \
+                .translate(displacement)
+            cache.store(self._cad_object, "cap", str(self.width), str(self.depth))
+        else:
+            self._cad_object = cached
+
+
+# ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 class KeySwitch(KeyBox, Computeable, CadObject):
@@ -128,6 +170,9 @@ class KeySwitch(KeyBox, Computeable, CadObject):
         self.width = config.width  # type: float
         self.depth = config.depth  # type: float
         self.thickness = config.thickness  # type: float
+
+
+# ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 class KeySwitchSlot(KeyBox, Computeable, CadObject):
@@ -140,35 +185,45 @@ class KeySwitchSlot(KeyBox, Computeable, CadObject):
         self.undercut_width = config.undercut_width  # type: float
         self.undercut_thickness = config.undercut_thickness  # type: float
 
-    def compute(self, basis_face: cadquery.Workplane, *args, **kwargs) -> None:
+    def compute(self, basis_face: cadquery.Workplane, cache: ObjectCache, *args, **kwargs) -> None:
         """
         To ensure the key cap clearance in cse keys are not placed planar,
         we use the key cap footprint as base size for the key slot.
 
         @precondition: key cap cad object has been computed
         @param basis_face: the bottom face of the key cap
+        @param cache: container for lookup or storing
         """
-        z_offset = basis_face.vertices(">Z").first().val().Z
 
-        top = cadquery.Workplane().sketch() \
-            .face(basis_face.wires().first().val()).faces("<Z") \
-            .rect(self.slot_width, self.slot_depth, angle=90, mode="s", tag="slot").finalize().extrude(-self.undercut_thickness) \
-            .translate((0, 0, -z_offset))
+        vs = basis_face.edges("|X").first().vertices("<X").first().val().X
+        ve = basis_face.edges("|X").first().vertices(">X").first().val().X
+        width = ve - vs
+        cached = cache.get("slot", str(width), str(self.slot_depth))
+        if cached is None:
+            z_offset = basis_face.vertices(">Z").first().val().Z
 
-        undercut_front = cadquery.Workplane() \
-            .box(self.undercut_width, self.undercut_depth, self.thickness) \
-            .translate((0, -self.slot_depth / 2 - self.undercut_depth / 2, -self.undercut_thickness - self.thickness / 2))
-        undercut_back = undercut_front.mirror("XZ")
-        undercut_left = cadquery.Workplane() \
-            .box(self.undercut_depth, self.undercut_width, self.thickness) \
-            .translate((-self.slot_width / 2 - self.undercut_depth / 2, 0, -self.undercut_thickness - self.thickness / 2))
-        undercut_right = undercut_left.mirror("YZ")
-        undercut = undercut_front.union(undercut_right).union(undercut_back).union(undercut_left)
+            top = cadquery.Workplane().sketch() \
+                .face(basis_face.wires().first().val()).faces("<Z") \
+                .rect(self.slot_width, self.slot_depth, angle=90, mode="s", tag="slot").finalize().extrude(-self.undercut_thickness) \
+                .translate((0, 0, -z_offset))
 
-        bottom = cadquery.Workplane().sketch().face(top.faces("<Z").edges().vals()).faces("<Z") \
-            .finalize().extrude(-self.thickness)
+            undercut_front = cadquery.Workplane() \
+                .box(self.undercut_width, self.undercut_depth, self.thickness) \
+                .translate((0, -self.slot_depth / 2 - self.undercut_depth / 2, -self.undercut_thickness - self.thickness / 2))
+            undercut_back = undercut_front.mirror("XZ")
+            undercut_left = cadquery.Workplane() \
+                .box(self.undercut_depth, self.undercut_width, self.thickness) \
+                .translate((-self.slot_width / 2 - self.undercut_depth / 2, 0, -self.undercut_thickness - self.thickness / 2))
+            undercut_right = undercut_left.mirror("YZ")
+            undercut = undercut_front.union(undercut_right).union(undercut_back).union(undercut_left)
 
-        self._cad_object = top.union(bottom.cut(undercut))
+            bottom = cadquery.Workplane().sketch().face(top.faces("<Z").edges().vals()).faces("<Z") \
+                .finalize().extrude(-self.thickness)
+
+            self._cad_object = top.union(bottom.cut(undercut))
+            cache.store(self._cad_object, "slot", str(width), str(self.slot_depth))
+        else:
+            self._cad_object = cache.get("slot", str(width), str(self.slot_depth))
 
     def get_cad_corner(self, direction_y: Direction, direction_x: Direction) -> cadquery.Workplane:
         if direction_y is Direction.BACK:
@@ -200,8 +255,8 @@ class KeySwitchSlot(KeyBox, Computeable, CadObject):
         else:
             assert False
 
-    # TODO basis is "normally" the bounding box of key
-    # TODO basis can be overridden
+
+# ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 class CadObjects(object):
@@ -214,7 +269,12 @@ class CadObjects(object):
         self.switch = None  # type: Optional[Shape]
 
 
+# ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
 class Key(Computeable, CadKeyMixin):
+    object_cache = ObjectCache(GlobalConfig.debug)
+
     def __init__(self) -> None:
         self.base = KeyBase(GlobalConfig.key_base)
         self.cap = KeyCap(GlobalConfig.cap)
@@ -230,13 +290,13 @@ class Key(Computeable, CadKeyMixin):
                         unit_depth_factor=self.base.unit_depth_factor,
                         unit_length=self.base.unit_length)
         self.switch.update()
-        # self.slot.update()
+        self.slot.update()
 
     def compute(self):
         # compute key components at coordinate origin
         self.base.compute()
-        self.cap.compute(position=self.base.position, position_offset=self.base.position_offset)
-        self.slot.compute(basis_face=self.cap.get_cad_object().faces("<Z"))
+        self.cap.compute(cache=Key.object_cache)
+        self.slot.compute(basis_face=self.cap.get_cad_object().faces("<Z"), cache=Key.object_cache)
         self.switch.compute()
 
         # translate cad objects to final position
