@@ -1,6 +1,6 @@
 from types import MethodType
 
-from keys import *
+from default_keys import *
 
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -143,40 +143,36 @@ class IsoEnterKey(Key150Unit):
     def __init__(self):
         super(IsoEnterKey, self).__init__()
         self.name = "ENT"
-        self.set_unit_depth_factor(2)
-        self.key_base.position_offset = [0, - GlobalConfig.key_base.unit_length / 2, 0]
+        self.base.unit_depth_factor = 2
+        self.base.position_offset = [0, - GlobalConfig.key_base.unit_length / 2, 0]
 
-        def compute(self, position: Tuple[float, float, float], position_offset: Tuple[float, float, float], outer_self=self, *args, **kwargs) -> None:
-            t = tuple([a + b for a, b in zip(position, position_offset)])
-            displacement = (t[0], t[1], t[2])  # type: Tuple[float, float, float]
+        def compute(self, outer_self=self, *args, **kwargs) -> None:
 
             upper_part = cadquery.Workplane() \
                 .wedge(self.width,
                        self.thickness,
-                       outer_self.key_base.unit_length - self.depth_clearance,
+                       outer_self.base.unit_length - self.depth_clearance,
                        self.dish_inset,
                        self.dish_inset,
                        self.width - self.dish_inset,
-                       outer_self.key_base.unit_length - self.depth_clearance - self.dish_inset,
+                       outer_self.base.unit_length - self.depth_clearance - self.dish_inset,
                        centered=(True, False, True)) \
                 .rotate((0, 0, 0), (1, 0, 0), 90) \
-                .translate((0, outer_self.key_base.unit_length / 2, self.z_clearance)) \
-                .translate(displacement)
+                .translate((0, outer_self.base.unit_length / 2, self.z_clearance)) \
 
             lower_part = cadquery.Workplane() \
-                .wedge(outer_self.key_base.unit_length * 1.25 - self.depth_clearance,
+                .wedge(outer_self.base.unit_length * 1.25 - self.depth_clearance,
                        self.thickness,
-                       outer_self.key_base.unit_length,
+                       outer_self.base.unit_length,
                        self.dish_inset,
                        - self.dish_inset,
-                       outer_self.key_base.unit_length * 1.25 - self.depth_clearance - self.dish_inset,
-                       outer_self.key_base.unit_length - self.dish_inset,
+                       outer_self.base.unit_length * 1.25 - self.depth_clearance - self.dish_inset,
+                       outer_self.base.unit_length - self.dish_inset,
                        centered=(True, False, False)) \
                 .rotate((0, 0, 0), (1, 0, 0), 90) \
-                .translate(((2 - 1.25) / 2 * (outer_self.key_base.unit_length - self.width_clearance / 2) / 2 - self.width_clearance / 2,
+                .translate(((2 - 1.25) / 2 * (outer_self.base.unit_length - self.width_clearance / 2) / 2 - self.width_clearance / 2,
                             self.depth_clearance / 2,
                             self.z_clearance)) \
-                .translate(displacement)
 
             self._cad_object = upper_part.union(lower_part)
 
@@ -196,8 +192,8 @@ class IsoNumpadEnterKey(Key100Unit):
     def __init__(self):
         super(IsoNumpadEnterKey, self).__init__()
         self.name = "NENT"
-        self.set_unit_depth_factor(2)
-        self.key_base.position_offset = [0, - GlobalConfig.key_base.unit_length / 2, 0]
+        self.base.unit_depth_factor = 2
+        self.base.position_offset = [0, - GlobalConfig.key_base.unit_length / 2, 0]
 
 
 class IsoNumpadPlusKey(Key100Unit):
@@ -213,8 +209,8 @@ class IsoNumpadPlusKey(Key100Unit):
     def __init__(self):
         super(IsoNumpadPlusKey, self).__init__()
         self.name = "NPLU"
-        self.set_unit_depth_factor(2)
-        self.key_base.position_offset = [0, - GlobalConfig.key_base.unit_length / 2, 0]
+        self.base.unit_depth_factor = 2
+        self.base.position_offset = [0, - GlobalConfig.key_base.unit_length / 2, 0]
 
 
 class IsoNumpadInsKey(Key200Unit):
@@ -228,7 +224,7 @@ class IsoNumpadInsKey(Key200Unit):
     def __init__(self):
         super(IsoNumpadInsKey, self).__init__()
         self.name = "NINS"
-        self.key_base.clearance_left = GlobalConfig.group.clearance_x_numpad
+        self.base.clearance_left = GlobalConfig.group.clearance_x_numpad
 
 
 class ArrowDownKey(CharacterKey):
@@ -258,8 +254,8 @@ class EscapeKey(CharacterKey):
     def __init__(self):
         super(EscapeKey, self).__init__()
         self.name = "ESC"
-        self.key_base.clearance_right = GlobalConfig.group.clearance_x_f_group / 2
-        self.key_base.clearance_bottom = GlobalConfig.group.clearance_y_f_group / 2
+        self.base.clearance_right = GlobalConfig.group.clearance_x_f_group / 2
+        self.base.clearance_bottom = GlobalConfig.group.clearance_y_f_group / 2
 
 
 class F1Key(CharacterKey):
@@ -273,7 +269,7 @@ class F1Key(CharacterKey):
     def __init__(self):
         super(F1Key, self).__init__()
         self.name = "F1"
-        self.key_base.clearance_left = GlobalConfig.group.clearance_x_f_group / 2
+        self.base.clearance_left = GlobalConfig.group.clearance_x_f_group / 2
 
 
 class F4Key(CharacterKey):
@@ -287,7 +283,7 @@ class F4Key(CharacterKey):
     def __init__(self):
         super(F4Key, self).__init__()
         self.name = "F4"
-        self.key_base.clearance_right = GlobalConfig.group.clearance_x_f_group / 2
+        self.base.clearance_right = GlobalConfig.group.clearance_x_f_group / 2
 
 
 class F5Key(CharacterKey):
@@ -301,7 +297,7 @@ class F5Key(CharacterKey):
     def __init__(self):
         super(F5Key, self).__init__()
         self.name = "F5"
-        self.key_base.clearance_left = GlobalConfig.group.clearance_x_f_group / 2
+        self.base.clearance_left = GlobalConfig.group.clearance_x_f_group / 2
 
 
 class F8Key(CharacterKey):
@@ -315,7 +311,7 @@ class F8Key(CharacterKey):
     def __init__(self):
         super(F8Key, self).__init__()
         self.name = "F8"
-        self.key_base.clearance_right = GlobalConfig.group.clearance_x_f_group / 2
+        self.base.clearance_right = GlobalConfig.group.clearance_x_f_group / 2
 
 
 class F9Key(CharacterKey):
@@ -329,14 +325,13 @@ class F9Key(CharacterKey):
     def __init__(self):
         super(F9Key, self).__init__()
         self.name = "F9"
-        self.key_base.clearance_left = GlobalConfig.group.clearance_x_f_group / 2
+        self.base.clearance_left = GlobalConfig.group.clearance_x_f_group / 2
 
 
 class F12Key(CharacterKey):
     def __init__(self):
         super(F12Key, self).__init__()
         self.name = "F12"
-        self.key_base.clearance_right = GlobalConfig.group.clearance_x_f_group / 2
 
 
 class PrintKey(CharacterKey):
@@ -350,7 +345,7 @@ class PrintKey(CharacterKey):
     def __init__(self):
         super(PrintKey, self).__init__()
         self.name = "PRT"
-        self.key_base.clearance_left = GlobalConfig.group.clearance_x_f_group / 2
+        self.base.clearance_left = GlobalConfig.group.clearance_x_arrow_group
 
 
 class InsertKey(CharacterKey):
@@ -364,7 +359,7 @@ class InsertKey(CharacterKey):
     def __init__(self):
         super(InsertKey, self).__init__()
         self.name = "INS"
-        self.key_base.clearance_left = GlobalConfig.group.clearance_x_f_group
+        self.base.clearance_left = GlobalConfig.group.clearance_x_arrow_group
 
 
 class DeleteKey(CharacterKey):
@@ -378,7 +373,7 @@ class DeleteKey(CharacterKey):
     def __init__(self):
         super(DeleteKey, self).__init__()
         self.name = "DEL"
-        self.key_base.clearance_left = GlobalConfig.group.clearance_x_f_group
+        self.base.clearance_left = GlobalConfig.group.clearance_x_arrow_group
 
 
 class NumpadDeleteKey(CharacterKey):
@@ -391,7 +386,7 @@ class ArrowLeftKey(CharacterKey):
     def __init__(self):
         super(ArrowLeftKey, self).__init__()
         self.name = "LAR"
-        self.key_base.clearance_left = GlobalConfig.group.clearance_x_f_group
+        self.base.clearance_left = GlobalConfig.group.clearance_x_arrow_group
 
 
 class ArrowUpKey(CharacterKey):
@@ -414,18 +409,21 @@ class Key100UnitNumpadSpacer(Key):
     def __init__(self) -> None:
         super(Key100UnitNumpadSpacer, self).__init__()
         self.name = "ns100"
-        self.key_base.clearance_left = GlobalConfig.group.clearance_x_numpad
+        self.base.clearance_left = GlobalConfig.group.clearance_x_numpad
 
 
 class Key100UnitUpArrowSpacer(Key100UnitSpacer):
     """
     for spacing the arrow-up key
       ╭───╮ ╭───╮
-      │spc│ │ ↑ │
+    ← │spc│ │ ↑ │
       ╰───╯ ╰───╯
+      ╭───╮ ╭───╮ ╭───╮
+      │ ← │ │ ↓ │ │ → │
+      ╰───╯ ╰───╯ ╰───╯
     """
 
     def __init__(self) -> None:
         super(Key100UnitUpArrowSpacer, self).__init__()
         self.name = "as100"
-        self.key_base.clearance_left = GlobalConfig.group.clearance_x_f_group
+        self.base.clearance_left = GlobalConfig.group.clearance_x_arrow_group

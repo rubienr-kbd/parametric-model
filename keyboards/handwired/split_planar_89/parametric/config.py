@@ -34,32 +34,37 @@ class Debug(object):
         Parameters
         ----------
         self.debug_enable : global switch for debug/release
-        self.show_placement_face : renders a wire outlining the key placement upon all subsequent key objects are placed relative to
-        self.show_show_key_name : renders the key name in the placement face
+        self.show_placement : renders a wire outlining the key placement upon all subsequent key objects are placed relative to
+        self.show_key_name : renders the key name in the placement face
         self.show_key_cap : renders the key cap
-        self.show_origins : emphasize each key origin (x/y-center) by small circle
+        self.show_key_origin : emphasize each key origin (x/y-center) by small circle
         """
         self.debug_enable = True  # type: bool
-        self.show_placement_face = True  # type: bool
+        self.show_placement = True  # type: bool
+        self.show_key_origin = False  # type: bool
         self.show_key_name = False  # type: bool
         self.show_key_cap = False  # type: bool
-        self.show_origins = True  # type: bool
-
-    @property
-    def render_key_name(self):
-        return self.debug_enable and self.show_placement_face and self.show_key_name
+        self.show_key_switch = False  # type: bool
 
     @property
     def render_key_placement(self):
-        return self.debug_enable and self.show_placement_face
+        return self.debug_enable and self.show_placement
+
+    @property
+    def render_origin(self):
+        return self.debug_enable and self.show_key_origin
+
+    @property
+    def render_key_name(self):
+        return self.debug_enable and self.show_placement and self.show_key_name
 
     @property
     def render_key_cap(self):
         return self.debug_enable and self.show_key_cap
 
     @property
-    def render_origins(self):
-        return self.debug_enable and self.show_origins
+    def render_key_switch(self):
+        return self.debug_enable and self.show_key_switch
 
 
 class KeyBaseConfig(object):
@@ -120,14 +125,20 @@ class KeySwitchSlotConfig(object):
     def __init__(self):
         """
         Arguments to sketch the necessary cutout for a single switch.
+
+        self.width : slot width (x-axis)
+        self.depth : slot deptg (y-axis)
+        self.thickness : thickness of top wall (z-axis; top skin to bottom of slot)
+        self.undercut_width : length of undercut
+        self.undercut_undercut_depth : horizontal inset of undercut below top skin
+        self.undercut_thickness : thickness of top wall above undercut (top skin to undercut)
         """
-        self.width = 18  # type: float
-        self.depth = 18  # type: float
+        self.width = 14  # type: float
+        self.depth = 14  # type: float
         self.thickness = 4  # type: float
-        self.clearance_x = 1  # type: float
-        self.clearance_y = 1  # type: float
-        self.clearance_f_group_x = 14  # type: float
-        self.clearance_arrow_group_x = 14  # type: float
+        self.undercut_width = 6  # type: float
+        self.undercut_depth = 1  # type: float
+        self.undercut_thickness = 1.25  # type: float
 
 
 class GroupConfig(object):
@@ -136,14 +147,18 @@ class GroupConfig(object):
         """
         Additional extra clearance for
           - F1, F5, F9 and Print
-          - print, insert, delete and arrows
-          - numpad
-        """
+          - print, insert, delete and left arrow
+          - left column of numpad keys
 
+        self.clearance_x_f_group : horizontal clearance in between ESC-F1, F4-F5 and F8-F9; should be unit_length * num_lesser_keys / num_gaps
+        self.clearance_y_f_group : vertical clearance in between F row and number row
+        self.clearance_x_arrow_group : horizontal clearance in between LAR-RCTL, ENT-INS, BSP-INS and F12-PRT
+        self.clearance_x_numpad : horizontal clearance in between arrow-group and numpad (RAR-0, PDN-7, PUP-NUM)
+        """
         self.clearance_x_f_group = 19 * 2 / 3  # type: float
         self.clearance_y_f_group = 4  # type: float
-        self.clearance_x_arrow_group = 14  # type: float
-        self.clearance_x_numpad = 14  # type: float
+        self.clearance_x_arrow_group = 10  # type: float
+        self.clearance_x_numpad = 10  # type: float
 
 
 class ArrowGroupConfig(object):

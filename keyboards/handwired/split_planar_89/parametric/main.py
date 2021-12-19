@@ -1,6 +1,5 @@
 from pathlib import Path
 from time import perf_counter
-from typing import Tuple
 
 from utils import *
 from iso_keys import *
@@ -25,7 +24,8 @@ def construct_key_placement():
     for row in build_keyboard_matrix():
 
         print("row {}".format(row_idx))
-        print("  col x       y     z    key   unit clrto clrri clrbo clrle capwi  capde capth vis")
+        print("  col|x       y     z   |key   unit|clrto clrri clrbo clrle|capwi  capde capth|vis")
+        print("  --------------------------------------------------------------------------------")
         is_first_key_in_row = True
         col_idx = 0
 
@@ -33,37 +33,39 @@ def construct_key_placement():
             key.update()
             if is_first_key_in_row:
                 if last_row is not None:
-                    KeyUtils.set_position_relative_to(key.key_base, last_row[0].key_base, Direction.TOP)
-                key.key_base.align_to_position(0, Direction.LEFT)
+                    KeyUtils.set_position_relative_to(key.base, last_row[0].base, Direction.TOP)
+                key.base.align_to_position(0, Direction.LEFT)
             elif last_key is not None:
-                KeyUtils.set_position_relative_to(key.key_base, last_key.key_base, Direction.RIGHT)
+                KeyUtils.set_position_relative_to(key.base, last_key.base, Direction.RIGHT)
             is_first_key_in_row = False
             last_key = key
 
             key.compute()
-            if GlobalConfig.debug.render_key_placement:
-                objects.append((key, key.cad_objects.plane))
-            if GlobalConfig.debug.render_key_name:
-                objects.append((key, key.cad_objects.key_name))
-            if GlobalConfig.debug.render_key_cap and key.key_base.is_visible:
-                objects.append((key, key.cad_objects.key_cap))
-            if GlobalConfig.debug.render_origins:
-                objects.append((key, key.cad_objects.origin))
 
-            print("  {:2} |{:6.2f}{:6.2f}{:6.2f}|{:5} {:4.2f}|{:5.2f} {:5.2f} {:5.2f} {:5.2f}|{:6.2f} {:5.2f} {:5.2f}|{}"
-                  .format(col_idx,
-                          key.key_base.position[0], key.key_base.position[1], key.key_base.position[2],
-                          key.name,
-                          key.key_base.unit_width_factor,
-                          key.key_base.clearance_top,
-                          key.key_base.clearance_right,
-                          key.key_base.clearance_bottom,
-                          key.key_base.clearance_left,
-                          key.cap.width,
-                          key.cap.depth,
-                          key.cap.thickness,
-                          "tru" if key.key_base.is_visible else "fls"
-                          ))
+            if key.cad_objects.plane:
+                objects.append((key, key.cad_objects.plane))
+            if key.cad_objects.name:
+                objects.append((key, key.cad_objects.name))
+            if key.cad_objects.cap and key.base.is_visible:
+                objects.append((key, key.cad_objects.cap))
+            if key.cad_objects.origin:
+                objects.append((key, key.cad_objects.origin))
+            if key.cad_objects.slot:
+                objects.append((key, key.cad_objects.slot))
+
+            print("  {col:2} |{x:6.2f}{y:6.2f}{z:6.2f}|{key:5} {unit:4.2f}|{clrto:5.2f} {clrri:5.2f} {clrbo:5.2f} {clrle:5.2f}|{capwi:6.2f} {capde:5.2f} {capth:5.2f}|{vis}"
+                  .format(col=col_idx,
+                          x=key.base.position[0], y=key.base.position[1], z=key.base.position[2],
+                          key=key.name,
+                          unit=key.base.unit_width_factor,
+                          clrto=key.base.clearance_top,
+                          clrri=key.base.clearance_right,
+                          clrbo=key.base.clearance_bottom,
+                          clrle=key.base.clearance_left,
+                          capwi=key.cap.width,
+                          capde=key.cap.depth,
+                          capth=key.cap.thickness,
+                          vis="yes" if key.base.is_visible else "no "))
 
             col_idx = col_idx + 1
         last_row = row
@@ -72,6 +74,7 @@ def construct_key_placement():
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+print("\n\n\n")
 
 if __name__ == "__main__":
     pc_1 = perf_counter()
@@ -100,6 +103,9 @@ else:
     print("{:.3f}s elapsed for construction".format(pc_2 - pc_1))
     a = cq.Assembly()
     for pyo, cqo in objects:
-        color = cq.Color(0, 0, 1, 0.5) if pyo.key_base.is_visible else cq.Color(1, 1, 1, 0.125)
+        color = cq.Color(0, 0, 1, 0.5) if pyo.base.is_visible else cq.Color(1, 1, 1, 0.125)
         a.add(cqo, color=color)
     show_object(a)
+
+pc_1 = perf_counter()
+print("{:.3f}s elapsed total".format(pc_1 - pc_0))

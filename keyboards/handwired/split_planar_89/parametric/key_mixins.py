@@ -3,15 +3,15 @@ from enum import Enum
 
 import cadquery
 
-
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+from config import GlobalConfig
 
 
 class Direction(Enum):
     TOP = 1
-    RIGHT = 2
-    BOTTOM = 3
-    LEFT = 4
+    BOTTOM = 2
+    LEFT = 3
+    RIGHT = 4
     FRONT = 5
     BACK = 6
 
@@ -114,33 +114,54 @@ class KeyBaseMixin(object):
 
 class CadKeyMixin(object):
 
-    def post_compute_cad_key_base(self) -> None:
-        self.key_base._cad_object = self.key_base.get_cad_object() \
-            .translate(tuple(self.key_base.position)) \
-            .translate(tuple(self.key_base.position_offset)) \
-            .tag("{}".format("key_base" if self.key_base.is_visible else "key_base_invisible"))
-
     @staticmethod
     def tag(cad_object: cadquery.Workplane, is_visible: bool, tag_text: str) -> cadquery.Workplane:
         return cad_object.tag("{}{}".format(tag_text, "_invisible" if not is_visible else ""))
 
+    def post_compute_cad_key_base(self) -> None:
+        self.base._cad_object = self.base.get_cad_object() \
+            .translate(tuple(self.base.position)) \
+            .translate(tuple(self.base.position_offset))
+        self.base._cad_object = CadKeyMixin.tag(self.base.get_cad_object(), self.base.is_visible, "key_base")
+
     def post_compute_key_base_name(self) -> cadquery.Workplane:
-        o = self.key_base.get_cad_object().faces().text(self.name, 5, 1).faces("<Z").wires() \
-            .translate(tuple(self.key_base.position)) \
-            .translate(tuple(self.key_base.position_offset))
-        return CadKeyMixin.tag(o, self.key_base.is_visible, "name")
+        o = self.base.get_cad_object().faces() \
+            .text(self.name, 5, 1).faces("<Z").wires() \
+            .translate(tuple(self.base.position)) \
+            .translate(tuple(self.base.position_offset))
+        return CadKeyMixin.tag(o, self.base.is_visible, "name")
 
     def post_compute_key_base_origin(self) -> cadquery.Workplane:
-        o = self.key_base.get_cad_object().faces().circle(0.5).extrude(1).faces("<Z").edges("not %Line") \
-            .translate(tuple(self.key_base.position)) \
-            .translate(tuple(self.key_base.position_offset))
-        return CadKeyMixin.tag(o, self.key_base.is_visible, "origin")
+        o = self.base.get_cad_object().faces() \
+            .circle(0.5).extrude(1).faces("<Z").edges("not %Line") \
+            .translate(tuple(self.base.position)) \
+            .translate(tuple(self.base.position_offset))
+        return CadKeyMixin.tag(o, self.base.is_visible, "origin")
 
     def post_compute_cad_cap(self):
-        self.cap._cad_object = CadKeyMixin.tag(self.cap._cad_object, self.key_base.is_visible, "cap")
+        self.cap._cad_object = self.cap.get_cad_object() \
+            .translate(tuple(self.base.position)) \
+            .translate(tuple(self.base.position_offset))
+        self.cap._cad_object = CadKeyMixin.tag(self.cap.get_cad_object(), self.base.is_visible, "cap")
+
+    def post_compute_cad_slot(self) -> None:
+        self.slot._cad_object = self.slot.get_cad_object() \
+            .translate(tuple(self.base.position)) \
+            .translate(tuple(self.base.position_offset))
+        self.slot._cad_object = CadKeyMixin.tag(self.slot.get_cad_object(), self.base.is_visible, "slot")
 
     def post_compute_cad_switch(self) -> None:
-        self.switch._cad_object = CadKeyMixin.tag(self.cap._cad_object, self.key_base.is_visible, "switch")
+        self.switch._cad_object = self.switch.get_cad_object() \
+            .translate(tuple(self.base.position)) \
+            .translate(tuple(self.base.position_offset))
+        self.switch._cad_object = CadKeyMixin.tag(self.switch.get_cad_object(), self.base.is_visible, "switch")
 
-    def post_compute_cad_switch_slot(self) -> None:
-        self.switch_slot._cad_object = CadKeyMixin.tag(self.cap._cad_object, self.key_base.is_visible, "switch_slot")
+    def final_post_compute(self):
+        self.post_compute_cad_key_base()
+        if GlobalConfig.debug.render_key_name:
+            self.cad_objects.name = self.post_compute_key_base_name()
+        if GlobalConfig.debug.render_origin:
+            self.cad_objects.origin = self.post_compute_key_base_origin()
+        self.post_compute_cad_cap()
+        self.post_compute_cad_slot()
+        self.post_compute_cad_switch()
