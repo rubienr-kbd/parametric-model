@@ -1,3 +1,4 @@
+import os
 from enum import Enum
 import argparse
 
@@ -42,10 +43,10 @@ class DebugConfig(object):
         """
         self.debug_enable = True  # type: bool
         self.show_placement = True  # type: bool
-        self.show_key_origin = True  # type: bool
+        self.show_key_origin = False  # type: bool
         self.show_key_name = False  # type: bool
-        self.show_key_cap = True  # type: bool
-        self.show_key_switch = True  # type: bool
+        self.show_key_cap = False  # type: bool
+        self.show_key_switch = False  # type: bool
         self.disable_object_cache = False  # type: bool
 
     @property
@@ -201,7 +202,7 @@ def parse_cli_args() -> argparse.Namespace:
                         choices=[e.name for e in KeyboardSize])
     parser.add_argument("-e", "--export", help="export to STEP file (see --filename, --path)", action="store_true")
     parser.add_argument("-f", "--filename", help=".step file name", default="split-planar-{}.step".format(GlobalConfig.matrix.layout_size.name), type=str)
-    parser.add_argument("-p", "--path", help="path where to export", default="./", type=str)
+    parser.add_argument("-p", "--path", help="path where to export", default=os.getcwd(), type=str)
 
     args = parser.parse_args()
     GlobalConfig.matrix.layout_size = KeyboardSize.__dict__[args.keyboard_size]

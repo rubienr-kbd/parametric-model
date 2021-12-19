@@ -2,9 +2,10 @@ from iso_keys import *
 
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+from utils import KeyUtils
 
 
-def build_key_row_0(size: KeyboardSize):
+def build_key_row_0(size: KeyboardSize) -> List[Key]:
     """
     space bar row
     """
@@ -40,7 +41,7 @@ def build_key_row_0(size: KeyboardSize):
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-def build_key_row_1(size: KeyboardSize):
+def build_key_row_1(size: KeyboardSize) -> List[Key]:
     """
     zxcv row
     """
@@ -81,7 +82,7 @@ def build_key_row_1(size: KeyboardSize):
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-def build_key_row_2(size: KeyboardSize):
+def build_key_row_2(size: KeyboardSize) -> List[Key]:
     """
     asdf row
     """
@@ -123,7 +124,7 @@ def build_key_row_2(size: KeyboardSize):
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-def build_key_row_3(size: KeyboardSize):
+def build_key_row_3(size: KeyboardSize) -> List[Key]:
     """
     qwer row
     """
@@ -164,7 +165,7 @@ def build_key_row_3(size: KeyboardSize):
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-def build_key_row_4(size: KeyboardSize):
+def build_key_row_4(size: KeyboardSize) -> List[Key]:
     """
     number row
     """
@@ -203,7 +204,7 @@ def build_key_row_4(size: KeyboardSize):
     return r
 
 
-def build_key_row_5(size: KeyboardSize):
+def build_key_row_5(size: KeyboardSize) -> List[Key]:
     """
     F row
     """
@@ -237,7 +238,12 @@ def build_key_row_5(size: KeyboardSize):
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-def build_keyboard_matrix():
+def build_key_matrix() -> List[List[Key]]:
+    """
+    Builds a matrix with key objects placed in ISO manner.
+    Note: The key's placements and cad objects are not computed.
+    @return: matrix of key objects
+    """
     size = GlobalConfig.matrix.layout_size
     assert size not in [KeyboardSize.S40, KeyboardSize.S60, KeyboardSize.S65, KeyboardSize.S75]
 
@@ -249,3 +255,59 @@ def build_keyboard_matrix():
         build_key_row_4(size),
         build_key_row_5(size)
     ]
+
+
+# ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+def construct_key_placement(key_matrix: List[List[Key]]) -> List[Tuple[Key, CadObjects]]:
+    objects = []  # type: List[Tuple[Key, CadObjects]]
+
+    last_row = None
+    last_key = None
+    row_idx = 0
+
+    for row in key_matrix:
+
+        print("row {}".format(row_idx))
+        print("  col│x       y     z   │key   unit│clrto clrri clrbo clrle│capwi  capde capth│vis")
+        print("  ───┼──────────────────┼──────────┼───────────────────────┼──────────────────┼───")
+        is_first_key_in_row = True
+        col_idx = 0
+
+        for key in row:
+            # update/resolve input parameters dependencies
+            key.update()
+
+            # compute planar key placement in ISO style
+            if is_first_key_in_row:
+                if last_row is not None:
+                    KeyUtils.set_position_relative_to(key.base, last_row[0].base, Direction.TOP)
+                key.base.align_to_position(0, Direction.LEFT)
+            elif last_key is not None:
+                KeyUtils.set_position_relative_to(key.base, last_key.base, Direction.RIGHT)
+            is_first_key_in_row = False
+            last_key = key
+
+            # compute cad objects
+            key.compute()
+            objects.append((key, key.cad_objects))
+
+            print("  {col:2} │{x:6.2f}{y:6.2f}{z:6.2f}│{key:5} {unit:4.2f}│{clrto:5.2f} {clrri:5.2f} {clrbo:5.2f} {clrle:5.2f}│{capwi:6.2f} {capde:5.2f} {capth:5.2f}│{vis}"
+                  .format(col=col_idx,
+                          x=key.base.position[0], y=key.base.position[1], z=key.base.position[2],
+                          key=key.name,
+                          unit=key.base.unit_width_factor,
+                          clrto=key.base.clearance_top,
+                          clrri=key.base.clearance_right,
+                          clrbo=key.base.clearance_bottom,
+                          clrle=key.base.clearance_left,
+                          capwi=key.cap.width,
+                          capde=key.cap.depth,
+                          capth=key.cap.thickness,
+                          vis="yes" if key.base.is_visible else "no "))
+
+            col_idx = col_idx + 1
+        last_row = row
+        row_idx = row_idx + 1
+    return objects

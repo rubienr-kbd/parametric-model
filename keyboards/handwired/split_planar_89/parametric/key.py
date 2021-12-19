@@ -1,6 +1,8 @@
-from typing import Optional, Tuple, Dict
+from typing import Optional, Dict
 
 from cadquery import Shape
+from cadquery.cq import CQObject
+
 from config import *
 from key_mixins import *
 import cadquery
@@ -194,13 +196,13 @@ class KeySwitchSlot(KeyBox, Computeable, CadObject):
         @param basis_face: the bottom face of the key cap
         @param cache: container for lookup or storing
         """
-
-        vs = basis_face.edges("|X").first().vertices("<X").first().val().X
-        ve = basis_face.edges("|X").first().vertices(">X").first().val().X
-        width = ve - vs
+        vs = basis_face.edges("|X").first().vertices("<X").first().val()  # type: cadquery.Vertex
+        ve = basis_face.edges("|X").first().vertices(">X").first().val()  # type: cadquery.Vertex
+        width = ve.X - vs.X
         cached = cache.get("slot", str(width), str(self.slot_depth))
         if cached is None:
-            z_offset = basis_face.vertices(">Z").first().val().Z
+            offset = basis_face.vertices(">Z").first().val()  # type: cadquery.Vertex
+            z_offset = offset.Z
 
             top = cadquery.Workplane().sketch() \
                 .face(basis_face.wires().first().val()).faces("<Z") \
@@ -267,6 +269,14 @@ class CadObjects(object):
         self.cap = None  # type: Optional[Shape]
         self.slot = None  # type: Optional[Shape]
         self.switch = None  # type: Optional[Shape]
+
+    def __iter__(self):
+        for attr, value in self.__dict__.items():
+            if value is None:
+                continue
+            else:
+                print("xxx {}".format(attr))
+                yield attr, value
 
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
