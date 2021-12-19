@@ -1,7 +1,6 @@
+#!/usr/bin/env python3
 from pathlib import Path
 from time import perf_counter
-
-from utils import *
 from iso_keys import *
 from iso_matrix import construct_key_placement, build_key_matrix
 import cadquery as cq

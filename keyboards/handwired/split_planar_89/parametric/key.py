@@ -1,7 +1,7 @@
+import math
 from typing import Optional, Dict
 
 from cadquery import Shape
-from cadquery.cq import CQObject
 
 from config import *
 from key_mixins import *
@@ -83,12 +83,11 @@ class ObjectCache(object):
 
     @staticmethod
     def cache_name(attr_1: str, attr_2: str = "0", attr_3: str = "0") -> str:
-        return "{}-{}-{}".format(attr_1, attr_2, attr_3)
+        return "({})-({})-({})".format(attr_1, attr_2, attr_3)
 
     def store(self, obj: cadquery.Workplane, attr_1: str, attr_2: str = "0", attr_3: str = "0") -> None:
         if not self.enabled:
             return
-
         key = ObjectCache.cache_name(attr_1, attr_2, attr_3)
 
         if key in self.container:
@@ -101,8 +100,7 @@ class ObjectCache(object):
             return None
         else:
             key = ObjectCache.cache_name(attr_1, attr_2, attr_3)
-            if key in self.container:
-                return self.container[key] if key in self.container else None
+            return self.container[key] if key in self.container else None
 
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -196,16 +194,25 @@ class KeySwitchSlot(KeyBox, Computeable, CadObject):
         @param basis_face: the bottom face of the key cap
         @param cache: container for lookup or storing
         """
-        vs = basis_face.edges("|X").first().vertices("<X").first().val()  # type: cadquery.Vertex
-        ve = basis_face.edges("|X").first().vertices(">X").first().val()  # type: cadquery.Vertex
-        width = ve.X - vs.X
-        cached = cache.get("slot", str(width), str(self.slot_depth))
+
+        # use diagonals as further caching attributes
+        tl = basis_face.vertices("<X and >Y").val()  # type: cadquery.Vertex
+        tr = basis_face.vertices(">X and >Y").val()  # type: cadquery.Vertex
+        # TODO "<X and <Y" sometimes returns a Vector insted of Vertice
+        #   bl = basis_face.vertices("<X and <Y").val()  # type: cadquery.Vertex
+        bl = basis_face.vertices("<X").val()  # type: cadquery.Vertex
+        br = basis_face.vertices(">X and <Y").val()  # type: cadquery.Vertex
+        diag1 = math.dist([tl.X, tl.Y], [br.X, br.Y])
+        diag2 = math.dist([tr.X, tr.Y], [bl.X, bl.Y])
+
+        cached = cache.get("slot", str(diag1), str(diag2))
+
         if cached is None:
             offset = basis_face.vertices(">Z").first().val()  # type: cadquery.Vertex
             z_offset = offset.Z
 
             top = cadquery.Workplane().sketch() \
-                .face(basis_face.wires().first().val()).faces("<Z") \
+                .face(basis_face.edges().vals()).faces("<Z") \
                 .rect(self.slot_width, self.slot_depth, angle=90, mode="s", tag="slot").finalize().extrude(-self.undercut_thickness) \
                 .translate((0, 0, -z_offset))
 
@@ -223,9 +230,9 @@ class KeySwitchSlot(KeyBox, Computeable, CadObject):
                 .finalize().extrude(-self.thickness)
 
             self._cad_object = top.union(bottom.cut(undercut))
-            cache.store(self._cad_object, "slot", str(width), str(self.slot_depth))
+            cache.store(self._cad_object, "slot", str(diag1), str(diag2))
         else:
-            self._cad_object = cache.get("slot", str(width), str(self.slot_depth))
+            self._cad_object = cache.get("slot", str(diag1), str(diag2))
 
     def get_cad_corner(self, direction_y: Direction, direction_x: Direction) -> cadquery.Workplane:
         if direction_y is Direction.BACK:
@@ -275,7 +282,6 @@ class CadObjects(object):
             if value is None:
                 continue
             else:
-                print("xxx {}".format(attr))
                 yield attr, value
 
 

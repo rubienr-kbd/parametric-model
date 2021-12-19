@@ -133,7 +133,7 @@ class IsoEnterKey(Key150Unit):
     """
        ↓ 1.5 unit
     ╭─────╮
-    │     │
+    │  ↲  │
     ╰╮    │ ← 2 units
      │    │
      ╰────╯
@@ -408,7 +408,7 @@ class Key100UnitNumpadSpacer(Key):
 
     def __init__(self) -> None:
         super(Key100UnitNumpadSpacer, self).__init__()
-        self.name = "ns100"
+        self.name = "sn100"
         self.base.clearance_left = GlobalConfig.group.clearance_x_numpad
 
 
@@ -425,5 +425,5 @@ class Key100UnitUpArrowSpacer(Key100UnitSpacer):
 
     def __init__(self) -> None:
         super(Key100UnitUpArrowSpacer, self).__init__()
-        self.name = "as100"
+        self.name = "sa100"
         self.base.clearance_left = GlobalConfig.group.clearance_x_arrow_group
