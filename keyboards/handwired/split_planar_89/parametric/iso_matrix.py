@@ -33,7 +33,7 @@ def build_key_row_0(size: KeyboardSize) -> List[Key]:
         r.extend([
             IsoNumpadInsKey(),
             NumpadDeleteKey(),
-            Key100UnitSpacer()])
+            Key100UnitSpacerConnected()])
 
     return r
 
@@ -46,17 +46,17 @@ def build_key_row_1(size: KeyboardSize) -> List[Key]:
     zxcv row
     """
     r = [LeftShiftKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
+         CharacterKey("|"),
+         CharacterKey("y"),
+         CharacterKey("x"),
+         CharacterKey("c"),
+         CharacterKey("v"),
+         CharacterKey("b"),
+         CharacterKey("n"),
+         CharacterKey("m"),
+         CharacterKey(","),
+         CharacterKey("."),
+         CharacterKey("-"),
          RightShiftKey()]
 
     assert size not in [KeyboardSize.S40, KeyboardSize.S60, KeyboardSize.S65, KeyboardSize.S75]
@@ -66,14 +66,14 @@ def build_key_row_1(size: KeyboardSize) -> List[Key]:
         r.extend([
             Key100UnitUpArrowSpacer(),
             ArrowUpKey(),
-            Key100UnitSpacer()])
+            Key100UnitSpacerFilled()])
 
     if size.value >= KeyboardSize.S100.value:
         # numpad
         r.extend([
             Key100UnitNumpadSpacer(),
-            Key100Unit(),
-            Key100Unit(),
+            CharacterKey("2"),
+            CharacterKey("3"),
             IsoNumpadEnterKey()])
 
     return r
@@ -87,18 +87,18 @@ def build_key_row_2(size: KeyboardSize) -> List[Key]:
     asdf row
     """
     r = [CapsLockKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
+         CharacterKey("a"),
+         CharacterKey("s"),
+         CharacterKey("d"),
+         CharacterKey("f"),
+         CharacterKey("g"),
+         CharacterKey("h"),
+         CharacterKey("j"),
+         CharacterKey("k"),
+         CharacterKey("l"),
+         CharacterKey("ö"),
+         CharacterKey("ä"),
+         CharacterKey("#"),
          Key125UnitSpacer()]
 
     assert size not in [KeyboardSize.S40, KeyboardSize.S60, KeyboardSize.S65, KeyboardSize.S75]
@@ -107,16 +107,16 @@ def build_key_row_2(size: KeyboardSize) -> List[Key]:
         # empty
         r.extend([
             Key100UnitUpArrowSpacer(),
-            Key100UnitSpacer(),
-            Key100UnitSpacer()])
+            Key100UnitSpacerFilled(),
+            Key100UnitSpacerFilled()])
 
     if size.value >= KeyboardSize.S100.value:
         # numpad
         r.extend([
             Key100UnitNumpadSpacer(),
-            Key100Unit(),
-            Key100Unit(),
-            Key100UnitSpacer()])
+            CharacterKey("5"),
+            CharacterKey("6"),
+            Key100UnitSpacerConnected()])
 
     return r
 
@@ -129,18 +129,18 @@ def build_key_row_3(size: KeyboardSize) -> List[Key]:
     qwer row
     """
     r = [TabKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
+         CharacterKey("q"),
+         CharacterKey("w"),
+         CharacterKey("e"),
+         CharacterKey("r"),
+         CharacterKey("t"),
+         CharacterKey("z"),
+         CharacterKey("u"),
+         CharacterKey("i"),
+         CharacterKey("o"),
+         CharacterKey("p"),
+         CharacterKey("ü"),
+         CharacterKey("+"),
          IsoEnterKey()]
 
     assert size not in [KeyboardSize.S40, KeyboardSize.S60, KeyboardSize.S65, KeyboardSize.S75]
@@ -156,8 +156,8 @@ def build_key_row_3(size: KeyboardSize) -> List[Key]:
         # numpad
         r.extend([
             Key100UnitNumpadSpacer(),
-            Key100Unit(),
-            Key100Unit(),
+            CharacterKey("8"),
+            CharacterKey("9"),
             IsoNumpadPlusKey()])
 
     return r
@@ -169,19 +169,19 @@ def build_key_row_4(size: KeyboardSize) -> List[Key]:
     """
     number row
     """
-    r = [CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
-         CharacterKey(),
+    r = [CharacterKey("^"),
+         CharacterKey("1"),
+         CharacterKey("2"),
+         CharacterKey("3"),
+         CharacterKey("4"),
+         CharacterKey("5"),
+         CharacterKey("6"),
+         CharacterKey("7"),
+         CharacterKey("8"),
+         CharacterKey("9"),
+         CharacterKey("0"),
+         CharacterKey("ß"),
+         CharacterKey("´"),
          BackspaceKey()]
 
     assert size not in [KeyboardSize.S40, KeyboardSize.S60, KeyboardSize.S65, KeyboardSize.S75]
@@ -197,9 +197,9 @@ def build_key_row_4(size: KeyboardSize) -> List[Key]:
         # numpad
         r.extend([
             Key100UnitNumpadSpacer(),
-            Key100Unit(),
-            Key100Unit(),
-            Key100Unit()])
+            CharacterKey("/"),
+            CharacterKey("*"),
+            CharacterKey("-")])
 
     return r
 
@@ -210,16 +210,16 @@ def build_key_row_5(size: KeyboardSize) -> List[Key]:
     """
     r = [EscapeKey(),
          F1Key(),
-         CharacterKey(),
-         CharacterKey(),
+         CharacterKey("F2"),
+         CharacterKey("F3"),
          F4Key(),
          F5Key(),
-         CharacterKey(),
-         CharacterKey(),
+         CharacterKey("F6"),
+         CharacterKey("F7"),
          F8Key(),
          F9Key(),
-         CharacterKey(),
-         CharacterKey(),
+         CharacterKey("F10"),
+         CharacterKey("F11"),
          F12Key()
          ]
 
@@ -244,10 +244,11 @@ def build_key_matrix() -> List[List[Key]]:
     Note: The key's placements and cad objects are not computed.
     @return: matrix of key objects
     """
+    print("compute key matrix ...")
     size = GlobalConfig.matrix.layout_size
     assert size not in [KeyboardSize.S40, KeyboardSize.S60, KeyboardSize.S65, KeyboardSize.S75]
 
-    return [
+    matrix = [
         build_key_row_0(size),
         build_key_row_1(size),
         build_key_row_2(size),
@@ -255,20 +256,19 @@ def build_key_matrix() -> List[List[Key]]:
         build_key_row_4(size),
         build_key_row_5(size)
     ]
+    print("compute key matrix: done")
+    return matrix
 
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-def construct_key_placement(key_matrix: List[List[Key]]) -> List[Tuple[Key, CadObjects]]:
-    objects = []  # type: List[Tuple[Key, CadObjects]]
-
+def compute_placement_and_cad_objects(key_matrix: List[List[Key]], result: List[Tuple[Key, CadObjects]]) -> None:
+    print("compute key placement and cad objects ...")
     last_row = None
     last_key = None
     row_idx = 0
-
     for row in key_matrix:
-
         print("row {}".format(row_idx))
         print("  col│x       y     z   │key   unit│clrto clrri clrbo clrle│capwi  capde capth│vis")
         print("  ───┼──────────────────┼──────────┼───────────────────────┼──────────────────┼───")
@@ -291,7 +291,7 @@ def construct_key_placement(key_matrix: List[List[Key]]) -> List[Tuple[Key, CadO
 
             # compute cad objects
             key.compute()
-            objects.append((key, key.cad_objects))
+            result.append((key, key.cad_objects))
 
             print("  {col:2} │{x:6.2f}{y:6.2f}{z:6.2f}│{key:5} {unit:4.2f}│{clrto:5.2f} {clrri:5.2f} {clrbo:5.2f} {clrle:5.2f}│{capwi:6.2f} {capde:5.2f} {capth:5.2f}│{vis}"
                   .format(col=col_idx,
@@ -310,4 +310,32 @@ def construct_key_placement(key_matrix: List[List[Key]]) -> List[Tuple[Key, CadO
             col_idx = col_idx + 1
         last_row = row
         row_idx = row_idx + 1
-    return objects
+    print("compute key placement and cad objects: done")
+
+def connect_horizontally(key_matrix: List[List[Key]], result: List[Tuple[Key, CadObjects]]) -> None :
+    print("connect keys horizontally ...")
+
+    def loft_left_to_right(left: Key, right: Key):
+        def get_wire(face):
+            return face.first().wires().val()
+
+        left_wire = get_wire(left.slot.get_cad_face(Direction.RIGHT))
+        right_wire = get_wire(right.slot.get_cad_face(Direction.LEFT))
+        return cadquery.Solid.makeLoft([left_wire, right_wire])
+
+    row_idx = 0
+    for row in key_matrix:
+        print("row {} ({} keys)".format(row_idx, len(row)))
+        for ki in range(1, len(row)):
+            if ki == 1:
+                print("  ", end="")
+            left = row[ki - 1]
+            right = row[ki]
+            if left.base.is_connected and right.base.is_connected:
+                print("{}←→ {}".format(left.name, right.name), end=" ")
+                x = CadObjects()
+                x.slot = loft_left_to_right(left, right)
+                result.append((left, x))
+        row_idx += 1
+        print()
+    print("connect keys horizontally: done")

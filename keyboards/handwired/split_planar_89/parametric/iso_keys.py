@@ -10,9 +10,9 @@ from default_keys import *
 
 
 class CharacterKey(Key100Unit):
-    def __init__(self):
+    def __init__(self, name="ch"):
         super(CharacterKey, self).__init__()
-        self.name = "ch"
+        self.name = name
 
 
 class TabKey(Key150Unit):
@@ -427,3 +427,6 @@ class Key100UnitUpArrowSpacer(Key100UnitSpacer):
         super(Key100UnitUpArrowSpacer, self).__init__()
         self.name = "sa100"
         self.base.clearance_left = GlobalConfig.group.clearance_x_arrow_group
+        self.base.is_visible = True
+        self.base.is_filled = True
+        self.base.is_connected = True

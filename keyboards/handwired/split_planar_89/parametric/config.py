@@ -34,20 +34,24 @@ class DebugConfig(object):
         """
         Parameters
         ----------
-        self.debug_enable : global switch for debug/release
-        self.show_placement : renders a wire outlining the key placement upon all subsequent key objects are placed relative to
-        self.show_key_name : renders the key name in the placement face
-        self.show_key_cap : renders the key cap
-        self.show_key_origin : emphasize each key origin (x/y-center) by small circle
-        self.disable_object_cache : deactivate cad object caching, otherwise re-use pre-computed objects (performance factor about 5)
+        self.debug_enable: global switch for debug/release
+        self.show_placement: renders a wire outlining the key placement upon all subsequent key objects are placed relative to
+        self.show_key_name: renders the key name in the placement face
+        self.show_key_cap: renders the key cap
+        self.show_key_origin: emphasize each key origin (x/y-center) by small circle
+        self.show_invisibles: renders placeholder components
+        self.disable_object_cache: deactivate cad object caching, otherwise re-use pre-computed objects (performance factor about 5)
+        self.render_unify_in_cadquery_editor: unifies the rendered view in cq-editor (does not affect export to file)
         """
         self.debug_enable = True  # type: bool
-        self.show_placement = True  # type: bool
+        self.show_placement = False  # type: bool
         self.show_key_origin = False  # type: bool
         self.show_key_name = False  # type: bool
         self.show_key_cap = False  # type: bool
         self.show_key_switch = False  # type: bool
+        self.show_invisibles = False  # type: bool
         self.disable_object_cache = False  # type: bool
+        self.unify_in_cadquery_editor = False  # type: bool
 
     @property
     def render_key_placement(self):
@@ -66,8 +70,16 @@ class DebugConfig(object):
         return self.debug_enable and self.show_key_cap
 
     @property
+    def render_invisibles(self):
+        return self.debug_enable and self.show_invisibles
+
+    @property
     def render_key_switch(self):
         return self.debug_enable and self.show_key_switch
+
+    @property
+    def render_unified(self):
+        return self.unify_in_cadquery_editor
 
 
 class KeyBaseConfig(object):
@@ -129,12 +141,12 @@ class KeySwitchSlotConfig(object):
         """
         Arguments to sketch the necessary cutout for a single switch.
 
-        self.width : slot width (x-axis)
-        self.depth : slot deptg (y-axis)
-        self.thickness : thickness of top wall (z-axis; top skin to bottom of slot)
+        self.width : slot width (length in x direction)
+        self.depth : slot depth (length in y direction)
+        self.thickness : total thickness of top skin wall (length in z direction)
         self.undercut_width : length of undercut
         self.undercut_undercut_depth : horizontal inset of undercut below top skin
-        self.undercut_thickness : thickness of top wall above undercut (top skin to undercut)
+        self.undercut_thickness : thickness of top skin face to top/beginning of undercut (length in z direction)
         """
         self.width = 14  # type: float
         self.depth = 14  # type: float

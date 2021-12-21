@@ -1,5 +1,6 @@
 from key import *
 
+
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -14,6 +15,23 @@ class Key100UnitSpacer(Key):
         super(Key100UnitSpacer, self).__init__()
         self.name = "su100"
         self.base.is_visible = False
+        self.base.is_connected = False
+
+
+class Key100UnitSpacerConnected(Key):
+    def __init__(self) -> None:
+        super(Key100UnitSpacerConnected, self).__init__()
+        self.name = "su100"
+        self.base.is_visible = False
+        self.base.is_connected = True
+
+
+class Key100UnitSpacerFilled(Key):
+    def __init__(self) -> None:
+        super(Key100UnitSpacerFilled, self).__init__()
+        self.name = "sf100"
+        self.base.is_visible = True
+        self.base.is_filled = True
 
 
 class Key125UnitSpacer(Key):
@@ -22,6 +40,7 @@ class Key125UnitSpacer(Key):
         self.name = "su125"
         self.base.unit_width_factor = 1.25
         self.base.is_visible = False
+        self.base.is_connected = False
 
 
 class Key125Unit(Key100Unit):
