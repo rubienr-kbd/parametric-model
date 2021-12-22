@@ -319,7 +319,7 @@ class KeyConnector(KeyBox, CadObject):
             assert False
 
 
-class KeyConnectors(object):
+class KeyConnectors(IterableObject):
     def __init__(self):
         self.front = KeyConnector()
         self.back = KeyConnector()
@@ -352,7 +352,7 @@ class KeySwitch(KeyBox, Computeable, CadObject):
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-class CadObjects(object):
+class CadObjects(IterableObject):
     def __init__(self):
         self.plane = None  # type: Optional[Shape]
         self.origin = None  # type: Optional[Shape]
@@ -360,14 +360,7 @@ class CadObjects(object):
         self.cap = None  # type: Optional[Shape]
         self.slot = None  # type: Optional[Shape]
         self.switch = None  # type: Optional[Shape]
-        self.connector = None  # type: Optional[Shape]
-
-    def __iter__(self):
-        for attr, value in self.__dict__.items():
-            if value is None:
-                continue
-            else:
-                yield attr, value
+        self.connectors = list()  # type: List[Shape]
 
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -410,10 +403,14 @@ class Key(Computeable, CadKeyMixin):
     def expose_cad_objects(self):
         if GlobalConfig.debug.show_placement:
             self.cad_objects.plane = self.base.get_cad_object()
+
         if GlobalConfig.debug.render_key_cap:
             self.cad_objects.cap = self.cap.get_cad_object()
+
         self.cad_objects.slot = self.slot.get_cad_object()
+
         if GlobalConfig.debug.render_key_switch:
             self.cad_objects.switch = self.switch.get_cad_object()
 
-# ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+        for attr_name, connector in [(attr_name, value) for attr_name, value in self.connectors if value.has_cad_object()]:
+            self.cad_objects.connectors.append(connector.get_cad_object())

@@ -1,6 +1,8 @@
 import os
 from enum import Enum
 import argparse
+from os import listdir
+from os.path import isfile, join
 
 """
 All dimensions are metric in [mm].
@@ -44,12 +46,14 @@ class DebugConfig(object):
         self.render_unify_in_cadquery_editor: unifies the rendered view in cq-editor (does not affect export to file)
         """
         self.debug_enable = True  # type: bool
-        self.show_placement = False  # type: bool
+        self.show_placement = True # type: bool
         self.show_key_origin = False  # type: bool
         self.show_key_name = False  # type: bool
-        self.show_key_cap = False  # type: bool
+        self.show_key_cap = True  # type: bool
         self.show_key_switch = False  # type: bool
         self.show_invisibles = False  # type: bool
+        self.hide_slots = False  # type: bool
+        self.hide_connectors = True  # type: bool
         self.disable_object_cache = False  # type: bool
         self.unify_in_cadquery_editor = False  # type: bool
 
@@ -80,6 +84,14 @@ class DebugConfig(object):
     @property
     def render_unified(self):
         return self.unify_in_cadquery_editor
+
+    @property
+    def render_slots(self):
+        return not self.hide_slots
+
+    @property
+    def render_connectors(self):
+        return not self.hide_connectors
 
 
 class KeyBaseConfig(object):
@@ -206,10 +218,20 @@ class GlobalConfig(object):
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+def get_eligible_matrix_modules():
+    abs_dir = os.path.dirname(os.path.abspath(__file__))
+    files = [f for f in listdir(abs_dir) if isfile(join(abs_dir, f))]
+    eligible = [f.rstrip(".py") for f in files if f.endswith("_matrix_builder.py")]
+    return eligible
+
+
+# ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 
 def parse_cli_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
+    parser.add_argument("-m", "--matrix", help="keyboard style to compute", default="iso_matrix_builder", choices=[get_eligible_matrix_modules()])
     parser.add_argument("-k", "--keyboard-size", help="keyboard size to generate; influences the layout to compute, not the key size", default=GlobalConfig.matrix.layout_size.name,
                         choices=[e.name for e in KeyboardSize])
     parser.add_argument("-e", "--export", help="export to STEP file (see --filename, --path)", action="store_true")

@@ -15,6 +15,17 @@ class Direction(Enum):
     FRONT = 5
     BACK = 6
 
+
+# ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+class IterableObject(object):
+    def __iter__(self):
+        for attr, value in self.__dict__.items():
+            if value is None:
+                continue
+            else:
+                yield attr, value
+
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -170,10 +181,12 @@ class CadKeyMixin(object):
 
     def final_post_compute(self):
         self.post_compute_cad_key_base()
+
         if GlobalConfig.debug.render_key_name:
             self.cad_objects.name = self.post_compute_key_base_name()
         if GlobalConfig.debug.render_origin:
             self.cad_objects.origin = self.post_compute_key_base_origin()
+
         self.post_compute_cad_cap()
         self.post_compute_cad_slot()
         self.post_compute_cad_switch()

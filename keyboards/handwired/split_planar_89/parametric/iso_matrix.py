@@ -272,9 +272,8 @@ def build_key_matrix() -> List[List[Key]]:
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-def compute_placement_and_cad_objects(key_matrix: List[List[Key]]) -> List[Tuple[Key, CadObjects]]:
+def compute_placement_and_cad_objects(key_matrix: List[List[Key]]) -> None:
     print("compute key placement and cad objects ...")
-    result = list()  # type: List[Tuple[Key, CadObjects]]
     last_row = None
     last_key = None
     row_idx = 0
@@ -299,9 +298,8 @@ def compute_placement_and_cad_objects(key_matrix: List[List[Key]]) -> List[Tuple
             is_first_key_in_row = False
             last_key = key
 
-            # compute cad objects
+            # compute placement and cad components of the key
             key.compute()
-            result.append((key, key.cad_objects))
 
             print("  {col:2} │{x:6.2f}{y:6.2f}{z:6.2f}│{key:5} {unit:4.2f}│{clrto:5.2f} {clrri:5.2f} {clrbo:5.2f} {clrle:5.2f}│{capwi:6.2f} {capde:5.2f} {capth:5.2f}│{vis}"
                   .format(col=col_idx,
@@ -321,8 +319,9 @@ def compute_placement_and_cad_objects(key_matrix: List[List[Key]]) -> List[Tuple
         last_row = row
         row_idx = row_idx + 1
     print("compute key placement and cad objects: done")
-    return result
 
+
+# ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 def get_key_connection_mapping(key_matrix: List[List[Key]]) -> List[Tuple[int, int, Direction, int, int, Direction]]:
     """
@@ -360,6 +359,9 @@ def get_key_connection_mapping(key_matrix: List[List[Key]]) -> List[Tuple[int, i
     result.extend([(4, len(key_matrix[5]), Direction.BACK, 5, len(key_matrix[5]) - 1, Direction.FRONT)])  # ESC to F12
 
     return result
+
+
+# ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 def get_connector_connection_mapping(key_matrix: List[List[Key]]) -> List[Tuple[int, int, Direction, Direction, int, int, Direction, Direction]]:
