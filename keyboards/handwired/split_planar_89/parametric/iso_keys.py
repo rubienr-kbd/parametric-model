@@ -412,6 +412,24 @@ class Key100UnitNumpadSpacer(Key):
         self.base.clearance_left = GlobalConfig.group.clearance_x_numpad
 
 
+class Key100UnitNumpadSpacerFilled(Key100UnitNumpadSpacer):
+    """
+    for spacing the filled key above numpad
+      ╭───╮
+    ← │   │
+      ╰───╯
+      ╭───╮
+      │num│
+      ╰───╯
+    """
+
+    def __init__(self) -> None:
+        super(Key100UnitNumpadSpacerFilled, self).__init__()
+        self.name = "sf100"
+        self.base.is_visible = True
+        self.base.is_filled = True
+        self.base.is_connected = True
+
 class Key100UnitUpArrowSpacer(Key100UnitSpacer):
     """
     for spacing the arrow-up key

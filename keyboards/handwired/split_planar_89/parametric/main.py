@@ -3,8 +3,10 @@ from pathlib import Path
 from time import perf_counter
 
 from iso_keys import *
-from iso_matrix import build_key_matrix, compute_placement_and_cad_objects, connect_horizontally
+from iso_matrix import build_key_matrix, compute_placement_and_cad_objects, get_key_connection_mapping, get_connector_connection_mapping
 import cadquery
+
+from utils import KeyUtils
 
 pc_0 = perf_counter()
 print("\nnstarted run {}".format(pc_0))
@@ -14,31 +16,35 @@ print("\nnstarted run {}".format(pc_0))
 
 
 def compute() -> List[Tuple[Key, CadObjects]]:
-    key_matrix = build_key_matrix()
-    objects = list()  # List[Tuple[Key, CadObjects]]
-    compute_placement_and_cad_objects(key_matrix, objects)
-    connect_horizontally(key_matrix, objects)
+    """
+    strategy
+      1. assemble key matrix: define key size and style(iso, ansi, with or without numpad/arrows etc.)
+      2. optional: compute additional rotation/displacement if keyboard is not planar (not yet supported)
+      3. compute real key placement and cad objects
+      4. connect keys (split keyboard: not yet supported)
+      5. construct wall around keys (not yet supported)
+      6. construct bottom plate (not yet supported)
+    """
 
-    #def loft_left_to_right(left: Key, right: Key):
-    #    def get_wire(face):
-    #        return face.first().wires().val()
-    #
-    #    left_wire = get_wire(left.slot.get_cad_face(Direction.RIGHT))
-    #    right_wire = get_wire(right.slot.get_cad_face(Direction.LEFT))
-    #    return cadquery.Solid.makeLoft([left_wire, right_wire])
-    #
-    #for row in key_matrix:
-    #    print("xxx len(row) {}".format(len(row)))
-    #    for ki in range(1, len(row)):
-    #        left = row[ki - 1]
-    #        right = row[ki]
-    #        if left.base.is_connected and right.base.is_connected:
-    #            print("xxx fuse l-r: {}-{}".format(left.name, right.name))
-    #            x = CadObjects()
-    #            x.slot = loft_left_to_right(left, right)
-    #            objects.append((left, x))
-    #    print("xxx ---")
-    return objects
+    # 1.
+    key_matrix = build_key_matrix()
+    # 2. not implemented
+    # 3.
+    computed_objects = compute_placement_and_cad_objects(key_matrix)
+    # 4.
+    conn_map = get_key_connection_mapping(key_matrix)
+    connections = KeyUtils.connect_keys(conn_map, key_matrix)
+    conn_map = get_connector_connection_mapping(key_matrix)
+    connections.extend(KeyUtils.connect_connectors(conn_map, key_matrix))
+
+    for k, _, c in connections:
+        x = CadObjects()
+        x.cap = c
+        computed_objects.append((k, x))
+
+    # 5. not implemented
+    # 6. not implemented
+    return computed_objects
 
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -56,7 +62,7 @@ if __name__ == "__main__":
 
     if cliargs.export:
         assembly = cadquery.Assembly()
-        union = None  # type: cadquery.Workplane
+        union = None  # type: Optional[cadquery.Workplane]
         for py_object, cad_objects in objects:
             if py_object.base.is_visible:
                 for o in [value for _attr, value in cad_objects]:

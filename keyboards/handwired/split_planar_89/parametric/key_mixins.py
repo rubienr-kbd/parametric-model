@@ -15,7 +15,6 @@ class Direction(Enum):
     FRONT = 5
     BACK = 6
 
-
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -47,11 +46,14 @@ class CadObject(object):
     def __init__(self):
         self._cad_object = None
 
-    def get_cad_object(self: Computeable, *args, **kwargs) -> cadquery.Workplane:
+    def has_cad_object(self: Computeable, *args, **kwargs) -> bool:
+        return hasattr(self, "_cad_object") and self._cad_object is not None
+
+    def get_cad_object(self: Union[Computeable, "CadObject"], *args, **kwargs) -> cadquery.Workplane:
         """
         If not re-implemented returns the pre-computed _cad_object property.
         """
-        assert hasattr(self, "_cad_object") and self._cad_object is not None
+        assert self.has_cad_object()
         return self._cad_object
 
 

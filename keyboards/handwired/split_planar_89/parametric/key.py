@@ -122,8 +122,22 @@ class KeyBase(KeyPlane, Computeable, CadObject, KeyBaseMixin):
         #  - connected or disconnected, e.g. placeholder below iso-enter vs placeholder near arrow up
         #  - unfilled or filled, e.g. placeholder near arrow up vs placeholder below numpad enter
         self.is_visible = True  # type: bool
-        self.is_connected = True  # type: bool
         self.is_filled = False  # type: bool
+        self.is_connected_left = True  # type: bool
+        self.is_connected_right = True  # type: bool
+        self.is_connected_front = True  # type: bool
+        self.is_connected_back = True  # type: bool
+
+    @property
+    def is_connected(self) -> bool:
+        return self.is_connected_left and self.is_connected_right and self.is_connected_front and self.is_connected_back
+
+    @is_connected.setter
+    def is_connected(self, value: bool):
+        self.is_connected_left = value
+        self.is_connected_right = value
+        self.is_connected_front = value
+        self.is_connected_back = value
 
     def update(self) -> None:
         self.width = self.unit_width_factor * self.unit_length
@@ -287,6 +301,45 @@ class KeySwitchSlot(KeyBox, Computeable, CadObject):
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
+class KeyConnector(KeyBox, CadObject):
+
+    def __init__(self):
+        super(KeyConnector, self).__init__()
+
+    def get_cad_face(self, direction: Direction) -> cadquery.Workplane:
+        if direction is Direction.FRONT:
+            return self._cad_object.faces("|Y").faces("<Y")
+        elif direction is Direction.BACK:
+            return self._cad_object.faces("|Y").faces(">Y")
+        elif direction is Direction.LEFT:
+            return self._cad_object.faces("|X").faces("<X")
+        elif direction is Direction.RIGHT:
+            return self._cad_object.faces("|X").faces(">X")
+        else:
+            assert False
+
+
+class KeyConnectors(object):
+    def __init__(self):
+        self.front = KeyConnector()
+        self.back = KeyConnector()
+        self.left = KeyConnector()
+        self.right = KeyConnector()
+
+    def get_connector(self, direction: Direction) -> KeyConnector:
+        if direction is Direction.LEFT:
+            return self.left
+        elif direction is Direction.RIGHT:
+            return self.right
+        elif direction is Direction.FRONT:
+            return self.front
+        elif direction is Direction.BACK:
+            return self.back
+
+
+# ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
 class KeySwitch(KeyBox, Computeable, CadObject):
 
     def __init__(self, config: KeySwitchConfig) -> None:
@@ -307,6 +360,7 @@ class CadObjects(object):
         self.cap = None  # type: Optional[Shape]
         self.slot = None  # type: Optional[Shape]
         self.switch = None  # type: Optional[Shape]
+        self.connector = None  # type: Optional[Shape]
 
     def __iter__(self):
         for attr, value in self.__dict__.items():
@@ -327,6 +381,7 @@ class Key(Computeable, CadKeyMixin):
         self.cap = KeyCap(GlobalConfig.cap)
         self.slot = KeySwitchSlot(GlobalConfig.switch_slot)
         self.switch = KeySwitch(GlobalConfig.switch)
+        self.connectors = KeyConnectors()
         self.cad_objects = CadObjects()
         self.name = ""  # type: str
 

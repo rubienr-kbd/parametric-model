@@ -1,6 +1,5 @@
 from iso_keys import *
 
-
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 from utils import KeyUtils
 
@@ -86,6 +85,8 @@ def build_key_row_2(size: KeyboardSize) -> List[Key]:
     """
     asdf row
     """
+    left_connected_spacer = Key125UnitSpacer()
+    left_connected_spacer.base.is_connected_left = True
     r = [CapsLockKey(),
          CharacterKey("a"),
          CharacterKey("s"),
@@ -99,7 +100,7 @@ def build_key_row_2(size: KeyboardSize) -> List[Key]:
          CharacterKey("ö"),
          CharacterKey("ä"),
          CharacterKey("#"),
-         Key125UnitSpacer()]
+         left_connected_spacer]
 
     assert size not in [KeyboardSize.S40, KeyboardSize.S60, KeyboardSize.S65, KeyboardSize.S75]
 
@@ -232,6 +233,14 @@ def build_key_row_5(size: KeyboardSize) -> List[Key]:
             ScrollLockKey(),
             PauseKey()])
 
+    if size.value >= KeyboardSize.S100.value:
+        # numpad
+        r.extend([
+            Key100UnitNumpadSpacerFilled(),
+            Key100UnitSpacerFilled(),
+            Key100UnitSpacerFilled(),
+            Key100UnitSpacerFilled()])
+
     return r
 
 
@@ -263,8 +272,9 @@ def build_key_matrix() -> List[List[Key]]:
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-def compute_placement_and_cad_objects(key_matrix: List[List[Key]], result: List[Tuple[Key, CadObjects]]) -> None:
+def compute_placement_and_cad_objects(key_matrix: List[List[Key]]) -> List[Tuple[Key, CadObjects]]:
     print("compute key placement and cad objects ...")
+    result = list()  # type: List[Tuple[Key, CadObjects]]
     last_row = None
     last_key = None
     row_idx = 0
@@ -311,31 +321,71 @@ def compute_placement_and_cad_objects(key_matrix: List[List[Key]], result: List[
         last_row = row
         row_idx = row_idx + 1
     print("compute key placement and cad objects: done")
+    return result
 
-def connect_horizontally(key_matrix: List[List[Key]], result: List[Tuple[Key, CadObjects]]) -> None :
-    print("connect keys horizontally ...")
 
-    def loft_left_to_right(left: Key, right: Key):
-        def get_wire(face):
-            return face.first().wires().val()
+def get_key_connection_mapping(key_matrix: List[List[Key]]) -> List[Tuple[int, int, Direction, int, int, Direction]]:
+    """
+    Specifies which keys and which faces are to be connected.
+    @param key_matrix: pool of keys with pre-computed placement and cad objects
+    """
+    result = list()  # type: List[Tuple[int, int, Direction, int, int, Direction]]
 
-        left_wire = get_wire(left.slot.get_cad_face(Direction.RIGHT))
-        right_wire = get_wire(right.slot.get_cad_face(Direction.LEFT))
-        return cadquery.Solid.makeLoft([left_wire, right_wire])
-
+    # connections in between neighbours in same row
     row_idx = 0
     for row in key_matrix:
-        print("row {} ({} keys)".format(row_idx, len(row)))
-        for ki in range(1, len(row)):
-            if ki == 1:
-                print("  ", end="")
-            left = row[ki - 1]
-            right = row[ki]
-            if left.base.is_connected and right.base.is_connected:
-                print("{}←→ {}".format(left.name, right.name), end=" ")
-                x = CadObjects()
-                x.slot = loft_left_to_right(left, right)
-                result.append((left, x))
+        result.extend((row_idx, k - 1, Direction.RIGHT, row_idx, k, Direction.LEFT) for k in range(1, len(row)))
         row_idx += 1
-        print()
-    print("connect keys horizontally: done")
+
+    # connections in between adjacent rows 0 to 1
+    result.extend(((0, k, Direction.BACK, 1, k, Direction.FRONT) for k in range(0, 3)))  # LCTL to LALT
+    result.extend(((0, k, Direction.BACK, 1, k + 6, Direction.FRONT) for k in range(4, 8)))  # RALT to RCTL
+    result.extend(((0, k, Direction.BACK, 1, k + 5, Direction.FRONT) for k in range(8, 11)))  # LARR to numpad
+    result.extend([(0, 11, Direction.BACK, 1, 13 + 4, Direction.FRONT)])  #
+    result.extend([(0, 12, Direction.BACK, 1, 14 + 4, Direction.FRONT)])  #
+
+    # connections in between adjacent rows 1 to 2
+    result.extend(((1, k, Direction.BACK, 2, k, Direction.FRONT) for k in range(0, 13)))  # LSFT to RSFT
+    result.extend(((1, k - 1, Direction.BACK, 2, k, Direction.FRONT) for k in range(14, len(key_matrix[2]))))  # spacer to numpad
+
+    # connections in between adjacent rows 2 to 3
+    result.extend(((2, k, Direction.BACK, 3, k, Direction.FRONT) for k in range(0, 13)))  # CSFT to #
+    result.extend(((2, k, Direction.BACK, 3, k, Direction.FRONT) for k in range(14, len(key_matrix[2]))))  # spacer to numpad
+
+    # connections in between adjacent rows 3 to 4
+    result.extend(((3, k, Direction.BACK, 4, k, Direction.FRONT) for k in range(0, len(key_matrix[3]))))  # TAB to numpad
+
+    # connections in between adjacent rows 4 to 5
+    result.extend(((4, k, Direction.BACK, 5, k, Direction.FRONT) for k in range(0, len(key_matrix[5]))))  # ESC to F12
+    result.extend([(4, len(key_matrix[5]), Direction.BACK, 5, len(key_matrix[5]) - 1, Direction.FRONT)])  # ESC to F12
+
+    return result
+
+
+def get_connector_connection_mapping(key_matrix: List[List[Key]]) -> List[Tuple[int, int, Direction, Direction, int, int, Direction, Direction]]:
+    """
+    Specifies which key-connectors from :func:`iso_matrix.get_key_connection_mapping` and which faces are to be connected.
+    @param key_matrix: pool of keys with pre-computed placement and cad objects
+    """
+    result = list()  # type: List[Tuple[int, int, Direction,  Direction, int, int, Direction,  Direction]]
+
+    # rows 0 to 1
+    result.extend(((0, k, Direction.RIGHT, Direction.BACK, 1, k, Direction.RIGHT, Direction.FRONT) for k in range(0, 4)))  # LCTL to LALT
+    result.extend(((0, k, Direction.RIGHT, Direction.BACK, 1, k + 6, Direction.RIGHT, Direction.FRONT) for k in range(4, 8)))  # RALT to RCTL
+    result.extend(((0, k, Direction.RIGHT, Direction.BACK, 1, k + 5, Direction.RIGHT, Direction.FRONT) for k in range(8, 11)))  # RALT to RCTL
+
+    # rows 1 to 2
+    result.extend(((1, k, Direction.RIGHT, Direction.BACK, 2, k, Direction.RIGHT, Direction.FRONT) for k in range(0, 12)))  # LSFT to RSFT
+    result.extend(((1, k, Direction.RIGHT, Direction.BACK, 2, k + 1, Direction.RIGHT, Direction.FRONT) for k in range(13, len(key_matrix[2]) - 1)))  # spacer to numpad
+
+    # rows 2 to 3
+    result.extend(((2, k, Direction.RIGHT, Direction.BACK, 3, k, Direction.RIGHT, Direction.FRONT) for k in range(0, 12)))  # CSFT to #
+    result.extend(((2, k, Direction.RIGHT, Direction.BACK, 3, k, Direction.RIGHT, Direction.FRONT) for k in range(13, len(key_matrix[2]) - 1)))  # spacer to numpad
+
+    # rows 3 to 4
+    result.extend(((3, k, Direction.RIGHT, Direction.BACK, 4, k, Direction.RIGHT, Direction.FRONT) for k in range(0, len(key_matrix[3]) - 1)))  # TAB to numpad
+
+    # rows 4 to 5
+    result.extend(((4, k, Direction.RIGHT, Direction.BACK, 5, k, Direction.RIGHT, Direction.FRONT) for k in range(0, len(key_matrix[5]) - 1)))  # ESC to F12
+
+    return result
