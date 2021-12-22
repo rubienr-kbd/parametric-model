@@ -251,12 +251,28 @@ class KeySwitchSlot(KeyBox, Computeable, CadObject):
         else:
             self._cad_object = cache.get("slot", str(diag1), str(diag2), str(do_fill))
 
-    def get_cad_corner(self, direction_x: Direction, direction_y: Direction, direction_z: Direction) -> Vector:
+    def get_cad_corner_edge(self, direction_x: Direction, direction_y: Direction) -> cadquery.Workplane:
+
+        if direction_y is Direction.BACK:
+            face = self.get_cad_object().faces(">Y")  # type: Optional[cadquery.Workplane]
+        elif direction_y is Direction.FRONT:
+            face = self.get_cad_object().faces("<Y")  # type: Optional[cadquery.Workplane]
+        else:
+            assert False
+
+        if direction_x is Direction.LEFT:
+            return face.edges("<X").first()
+        elif direction_x is Direction.RIGHT:
+            return face.edges(">X").first()
+        else:
+            assert False
+
+    def get_cad_corner_vertex(self, direction_x: Direction, direction_y: Direction, direction_z: Direction) -> Vector:
         """
         Example:
             e = cadquery.Edge.makeLine(
-                o.get_cad_corner(Direction.LEFT, Direction.BACK, Direction.TOP),
-                o.get_cad_corner(Direction.RIGHT, Direction.BACK, Direction.BOTTOM))
+                o.get_cad_corner_vertex(Direction.LEFT, Direction.BACK, Direction.TOP),
+                o.get_cad_corner_vertex(Direction.RIGHT, Direction.BACK, Direction.BOTTOM))
 
         @param direction_x: left or right
         @param direction_y: front or back
@@ -301,7 +317,7 @@ class KeySwitchSlot(KeyBox, Computeable, CadObject):
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-class KeyConnector(KeyBox, CadObject):
+class KeyConnector(CadObject):
 
     def __init__(self):
         super(KeyConnector, self).__init__()
@@ -394,23 +410,20 @@ class Key(Computeable, CadKeyMixin):
         self.slot.compute(basis_face=self.cap.get_cad_object().faces("<Z"),
                           do_fill=self.base.is_filled,
                           cache=Key.object_cache)
-        self.switch.compute()
-
+        if GlobalConfig.debug.render_switch:
+            self.switch.compute()
         # translate cad objects to final position
         self.final_post_compute()
+
         self.expose_cad_objects()
 
     def expose_cad_objects(self):
-        if GlobalConfig.debug.show_placement:
-            self.cad_objects.plane = self.base.get_cad_object()
-
-        if GlobalConfig.debug.render_key_cap:
-            self.cad_objects.cap = self.cap.get_cad_object()
-
+        self.cad_objects.plane = self.base.get_cad_object()
+        self.cad_objects.cap = self.cap.get_cad_object()
         self.cad_objects.slot = self.slot.get_cad_object()
+        self.cad_objects.switch = self.switch.get_cad_object() if self.switch.has_cad_object() else None
 
-        if GlobalConfig.debug.render_key_switch:
-            self.cad_objects.switch = self.switch.get_cad_object()
-
-        for attr_name, connector in [(attr_name, value) for attr_name, value in self.connectors if value.has_cad_object()]:
+        self.cad_objects.connectors.clear()
+        to_expose = [self.connectors.right, self.connectors.front]
+        for connector in [connector for connector in to_expose if connector.has_cad_object()]:
             self.cad_objects.connectors.append(connector.get_cad_object())

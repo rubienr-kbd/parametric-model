@@ -4,7 +4,7 @@ from iso_matrix import *
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-def compute() -> List[Union[cadquery.Workplane, cadquery.Assembly]]:
+def compute(**kwargs) -> List[Union[cadquery.Workplane, cadquery.Assembly]]:
     """
     strategy
       1. assemble key matrix: define key size and style(iso, ansi, with or without numpad/arrows etc.)
@@ -32,7 +32,7 @@ def compute() -> List[Union[cadquery.Workplane, cadquery.Assembly]]:
     # 6. not implemented
 
     # n.
-    KeyUtils.remove_cad_objects(key_matrix)
-
+    kwargs.get('for_export', False)
+    KeyUtils.remove_cad_objects(key_matrix, remove_non_solids=kwargs.get('for_export', False))
 
     return key_matrix

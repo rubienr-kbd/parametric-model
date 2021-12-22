@@ -36,29 +36,52 @@ class DebugConfig(object):
         """
         Parameters
         ----------
-        self.debug_enable: global switch for debug/release
-        self.show_placement: renders a wire outlining the key placement upon all subsequent key objects are placed relative to
+        self.debug_enable: global switch to enable ir disable debug
+
+        self.show_placement: outline the key placement for each key
+        self.show_key_origin: outline each key origin (x/y-center) by a small circle
         self.show_key_name: renders the key name in the placement face
         self.show_key_cap: renders the key cap
-        self.show_key_origin: emphasize each key origin (x/y-center) by small circle
-        self.show_invisibles: renders placeholder components
-        self.disable_object_cache: deactivate cad object caching, otherwise re-use pre-computed objects (performance factor about 5)
-        self.render_unify_in_cadquery_editor: unifies the rendered view in cq-editor (does not affect export to file)
+        self.show_key_switch: renders the key switch (optional, only decorative)
+
+        self.show_invisibles: force render placeholder components
+        self.hide_slots: removes all slots from export/view
+        self.hide_connectors: removes all connectors from export/view
+
+        unified vs unified + clean vs assembly:
+        assembly:        about 10 seconds
+        unified:         about  1 minute
+        unified + clean: about 10 minutes
+
+        self.unify_in_cadquery_editor: unifies otherwise assemblies the rendered view; False recommended
+        self.unify_in_step_export: unifies otherwise assemblies the rendered view; if True slower else very fast; True recommended
+        self.do_clean_union_in_cadquery: to have a clean shape union; very slow if True else faster; False recommended
+        self.do_clean_union_in_step_export: to have a clean shape union; very slow if True else faster; False recommended for freecad
+
+        self.disable_object_cache: deactivate cad object caching, otherwise re-use pre-computed objects whenever possible; False recommended
         """
+
         self.debug_enable = True  # type: bool
-        self.show_placement = True # type: bool
+
+        self.show_placement = False  # type: bool
         self.show_key_origin = False  # type: bool
-        self.show_key_name = False  # type: bool
-        self.show_key_cap = True  # type: bool
+        self.show_key_name = True  # type: bool
+        self.show_key_cap = False  # type: bool
         self.show_key_switch = False  # type: bool
+
         self.show_invisibles = False  # type: bool
         self.hide_slots = False  # type: bool
-        self.hide_connectors = True  # type: bool
-        self.disable_object_cache = False  # type: bool
+        self.hide_connectors = False  # type: bool
+
         self.unify_in_cadquery_editor = False  # type: bool
+        self.unify_in_step_export = True  # type: bool
+        self.do_clean_union_in_cadquery = False  # type: bool
+        self.do_clean_union_in_step_export = False  # type: bool
+
+        self.disable_object_cache = False  # type: bool
 
     @property
-    def render_key_placement(self):
+    def render_placement(self):
         return self.debug_enable and self.show_placement
 
     @property
@@ -66,11 +89,11 @@ class DebugConfig(object):
         return self.debug_enable and self.show_key_origin
 
     @property
-    def render_key_name(self):
-        return self.debug_enable and self.show_placement and self.show_key_name
+    def render_name(self):
+        return self.debug_enable and self.show_key_name
 
     @property
-    def render_key_cap(self):
+    def render_cap(self):
         return self.debug_enable and self.show_key_cap
 
     @property
@@ -78,20 +101,32 @@ class DebugConfig(object):
         return self.debug_enable and self.show_invisibles
 
     @property
-    def render_key_switch(self):
+    def render_switch(self):
         return self.debug_enable and self.show_key_switch
+
+    @property
+    def render_slots(self):
+        return True if not self.debug_enable else not self.hide_slots
+
+    @property
+    def render_connectors(self):
+        return True if not self.debug_enable else not self.hide_connectors
 
     @property
     def render_unified(self):
         return self.unify_in_cadquery_editor
 
     @property
-    def render_slots(self):
-        return not self.hide_slots
+    def export_unified(self):
+        return self.unify_in_step_export
 
     @property
-    def render_connectors(self):
-        return not self.hide_connectors
+    def render_cleaned_union(self):
+        return self.do_clean_union_in_cadquery
+
+    @property
+    def export_cleaned_union(self):
+        return self.do_clean_union_in_step_export
 
 
 class KeyBaseConfig(object):
@@ -231,12 +266,29 @@ def get_eligible_matrix_modules():
 def parse_cli_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument("-m", "--matrix", help="keyboard style to compute", default="iso_matrix_builder", choices=[get_eligible_matrix_modules()])
-    parser.add_argument("-k", "--keyboard-size", help="keyboard size to generate; influences the layout to compute, not the key size", default=GlobalConfig.matrix.layout_size.name,
-                        choices=[e.name for e in KeyboardSize])
-    parser.add_argument("-e", "--export", help="export to STEP file (see --filename, --path)", action="store_true")
-    parser.add_argument("-f", "--filename", help=".step file name", default="split-planar-{}.step".format(GlobalConfig.matrix.layout_size.name), type=str)
-    parser.add_argument("-p", "--path", help="path where to export", default=os.getcwd(), type=str)
+    style_group = parser.add_argument_group("Style")
+    style_group.add_argument("-m", "--matrix",
+                             help="the keyboard style to compute",
+                             default="iso_matrix_builder",
+                             choices=get_eligible_matrix_modules())
+    style_group.add_argument("-k", "--keyboard-size",
+                             help="the keyboard size to generate: influences the layout to compute, not the key size",
+                             default=GlobalConfig.matrix.layout_size.name,
+                             choices=[e.name for e in KeyboardSize])
+
+    export_group = parser.add_argument_group("Export", )
+    export_group.add_argument("-e", "--export",
+                              help="if specified export computed model to STEP file otherwise dry run; "
+                                   "Exporting may take up to several minutes. For development load main.py with a cadquery editor (i.e. cq-editor).",
+                              action="store_true")
+    export_group.add_argument("-f", "--filename",
+                              help="step file name",
+                              default="split-planar-{}.step".format(GlobalConfig.matrix.layout_size.name),
+                              type=str)
+    export_group.add_argument("-p", "--path",
+                              help="path where to export",
+                              default=os.getcwd(),
+                              type=str)
 
     args = parser.parse_args()
     GlobalConfig.matrix.layout_size = KeyboardSize.__dict__[args.keyboard_size]

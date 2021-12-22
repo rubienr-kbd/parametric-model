@@ -1,6 +1,5 @@
-import cadquery
-
 from key import *
+import cadquery
 
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -123,31 +122,40 @@ class KeyUtils(object):
         print("\ncompute connector gap filler: done")
 
     @staticmethod
-    def remove_cad_objects(key_matrix: List[List[Key]]) -> None:
+    def remove_cad_objects(key_matrix: List[List[Key]], remove_non_solids: bool) -> None:
         """
         Filters out cad objects from view that must be computed due to dependencies.
         @param key_matrix: pool of keys with pre-computed placement and cad objects
         """
+        row_idx = 0
         print("removing cad objects ...")
         for row in key_matrix:
+            print("row {}".format(row_idx))
             for key in row:
-                print("{:7}: ".format(key.name), end="")
-                if not GlobalConfig.debug.show_placement:
+                print("  {:7}: ".format(key.name), end=" ")
+                if not GlobalConfig.debug.render_placement or remove_non_solids:
                     key.cad_objects.plane = None
-                    print("plcement", end=" ")
-                if not GlobalConfig.debug.render_key_cap:
+                    print("placement", end=" ")
+                if not GlobalConfig.debug.render_origin or remove_non_solids:
+                    key.cad_objects.origin = None
+                    print("origin", end=" ")
+                if not GlobalConfig.debug.render_name or remove_non_solids:
+                    key.cad_objects.name = None
+                    print("name", end=" ")
+                if not GlobalConfig.debug.render_cap:
                     key.cad_objects.cap = None
                     print("cap", end=" ")
                 if not GlobalConfig.debug.render_slots:
                     key.cad_objects.slot = None
                     print("slot", end=" ")
-                if not GlobalConfig.debug.render_key_switch:
+                if not GlobalConfig.debug.render_switch:
                     key.cad_objects.switch = None
                     print("switch", end=" ")
                 if not GlobalConfig.debug.render_connectors:
                     key.cad_objects.connectors = []
                     print("connectors", end=" ")
                 print("")
+            row_idx += 1
         print("removing cad objects: done")
 
     @staticmethod
@@ -159,14 +167,16 @@ class KeyUtils(object):
         @param do_clean_union: recommended False for unified export to step file
         @return cadquery.Workplane if unify requested, of cadquery.Assembly otherwise
         """
-        print("final assembly ...")
+        print("final assembly ({}) ...".format("union" if do_unify else "assembly"))
         assembly = cadquery.Assembly()
-        union = None  # type: Optional[cadquery.Workplane]
+        union = cadquery.Workplane()  # type: cadquery.Workplane
 
+        row_idx = 0
         for row in key_matrix:
+            print("row {}".format(row_idx))
             for key in row:
                 color = cadquery.Color(0, 0, 1, 0.5) if key.base.is_visible else cadquery.Color(1, 1, 1, 0.125)
-                print("{:7}:".format(key.name), end=" ")
+                print("  {:7}:".format(key.name), end=" ")
                 if not key.base.is_visible and not GlobalConfig.debug.show_invisibles:
                     continue
 
@@ -174,20 +184,20 @@ class KeyUtils(object):
                 for object_name, cad_object in [(attr_name, value) for attr_name, value in key.cad_objects]:
                     if type(cad_object) is list:
                         continue
-                    print("{}".format(object_name))
+                    print("{}".format(object_name), end=" ")
                     if do_unify:
-                        union = cad_object if union is None else union.union(cad_object, clean=do_clean_union)
+                        union = union.union(cad_object, clean=do_clean_union)
                     else:
                         assembly = assembly.add(cad_object, color=color)
 
                 # connectors
                 for connector in key.cad_objects.connectors:
-                    print("{connectors}")
+                    print("connector", end=" ")
                     if do_unify:
-                        union = connector if union is None else union.union(connector, clean=do_clean_union)
+                        union = union.union(connector, clean=do_clean_union)
                     else:
                         assembly = assembly.add(connector, color=color)
-
-
-        print("final assembly: done")
+                print("")
+            row_idx += 1
+        print("final assembly ({}): done".format("union" if do_unify else "assembly"))
         return union if do_unify else assembly
