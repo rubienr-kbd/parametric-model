@@ -1,6 +1,9 @@
 # Pycharm
 .idea
 
+# Generated CAD files
+*.step
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
