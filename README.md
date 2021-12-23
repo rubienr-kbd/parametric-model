@@ -43,7 +43,7 @@ This is yet another generator script that tries to generate a 3D model in STEP f
     python src/main.py
 
 ## Configuration
-See: [./config.py](./config.py)
+See: [./src/config.py](./src/config.py)
 
 ## Screenshots
 <img src="./resources/cq-editor-example-01.png" width="30%" />
