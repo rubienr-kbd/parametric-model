@@ -46,5 +46,6 @@ This is yet another generator script that tries to generate a 3D model in STEP f
 See: [./config.py](./config.py)
 
 ## Screenshots
-![](.resources/cq-editor-example-01.png)
-![](.resources/freecad-example-01.png)
+<img src="./resources/cq-editor-example-01.png" width="30%" />
+<br/>
+<img src="./resources/freecad-example-01.png" width="30%" />
