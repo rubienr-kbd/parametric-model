@@ -1,7 +1,8 @@
 from iso_keys import *
+from utils import KeyUtils
+
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-from utils import KeyUtils
 
 
 def build_key_row_0(size: KeyboardSize) -> List[Key]:

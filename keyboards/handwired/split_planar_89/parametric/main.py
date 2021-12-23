@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import importlib
-import os
 from pathlib import Path
 from time import perf_counter
 
@@ -8,6 +7,7 @@ from iso_keys import *
 from utils import KeyUtils
 
 kbd_matrix_builder = importlib.import_module(cliargs.matrix)
+
 import cadquery
 
 
@@ -49,14 +49,12 @@ def run(perf_counter_begin: float) -> None:
         print("  clean to have a clean shape union: {}".format("yes" if do_clean_union else "no"))
 
 
-
-
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 pc_0 = perf_counter()
 print("\nstarted run at {:.3f}".format(pc_0))
 run(perf_counter_begin=pc_0)
-pc_1 = perf_counter()
-print("\n{:.3f}s elapsed total".format(pc_1 - pc_0))
+pc_5 = perf_counter()
+print("\n{:.3f}s elapsed total".format(pc_5 - pc_0))
 print("finished run at {:.3f}\n".format(pc_0))

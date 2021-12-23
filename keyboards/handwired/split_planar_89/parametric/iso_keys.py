@@ -146,35 +146,34 @@ class IsoEnterKey(Key150Unit):
         self.base.unit_depth_factor = 2
         self.base.position_offset = [0, - GlobalConfig.key_base.unit_length / 2, 0]
 
-        def compute(self, outer_self=self, *args, **kwargs) -> None:
-
+        def compute(inner_self: KeyCap, outer_self=self, *_args, **_kwargs) -> None:
             upper_part = cadquery.Workplane() \
-                .wedge(self.width,
-                       self.thickness,
-                       outer_self.base.unit_length - self.depth_clearance,
-                       self.dish_inset,
-                       self.dish_inset,
-                       self.width - self.dish_inset,
-                       outer_self.base.unit_length - self.depth_clearance - self.dish_inset,
+                .wedge(inner_self.width,
+                       inner_self.thickness,
+                       outer_self.base.unit_length - inner_self.depth_clearance,
+                       inner_self.dish_inset,
+                       inner_self.dish_inset,
+                       inner_self.width - inner_self.dish_inset,
+                       outer_self.base.unit_length - inner_self.depth_clearance - inner_self.dish_inset,
                        centered=(True, False, True)) \
                 .rotate((0, 0, 0), (1, 0, 0), 90) \
-                .translate((0, outer_self.base.unit_length / 2, self.z_clearance)) \
+                .translate((0, outer_self.base.unit_length / 2, inner_self.z_clearance))
 
             lower_part = cadquery.Workplane() \
-                .wedge(outer_self.base.unit_length * 1.25 - self.depth_clearance,
-                       self.thickness,
+                .wedge(outer_self.base.unit_length * 1.25 - inner_self.depth_clearance,
+                       inner_self.thickness,
                        outer_self.base.unit_length,
-                       self.dish_inset,
-                       - self.dish_inset,
-                       outer_self.base.unit_length * 1.25 - self.depth_clearance - self.dish_inset,
-                       outer_self.base.unit_length - self.dish_inset,
+                       inner_self.dish_inset,
+                       - inner_self.dish_inset,
+                       outer_self.base.unit_length * 1.25 - inner_self.depth_clearance - inner_self.dish_inset,
+                       outer_self.base.unit_length - inner_self.dish_inset,
                        centered=(True, False, False)) \
                 .rotate((0, 0, 0), (1, 0, 0), 90) \
-                .translate(((2 - 1.25) / 2 * (outer_self.base.unit_length - self.width_clearance / 2) / 2 - self.width_clearance / 2,
-                            self.depth_clearance / 2,
-                            self.z_clearance)) \
+                .translate(((2 - 1.25) / 2 * (outer_self.base.unit_length - inner_self.width_clearance / 2) / 2 - inner_self.width_clearance / 2,
+                            inner_self.depth_clearance / 2,
+                            inner_self.z_clearance))
 
-            self._cad_object = upper_part.union(lower_part)
+            inner_self._cad_object = upper_part.union(lower_part)
 
         self.cap.compute = MethodType(compute, self.cap)
 
@@ -429,6 +428,7 @@ class Key100UnitNumpadSpacerFilled(Key100UnitNumpadSpacer):
         self.base.is_visible = True
         self.base.is_filled = True
         self.base.is_connected = True
+
 
 class Key100UnitUpArrowSpacer(Key100UnitSpacer):
     """

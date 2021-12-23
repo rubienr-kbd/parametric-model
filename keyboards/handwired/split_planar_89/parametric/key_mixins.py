@@ -3,6 +3,7 @@ from typing import Union, List, Tuple
 from enum import Enum
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from key import Key
 
@@ -31,12 +32,13 @@ class IterableObject(object):
             else:
                 yield attr, value
 
+
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 class Computeable(object):
 
-    def update(self, *args, **kwargs) -> None:
+    def update(self: "CadObject", *args, **kwargs) -> None:
         """
         Resolves/computes input data dependencies for compute().
         """

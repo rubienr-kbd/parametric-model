@@ -34,8 +34,13 @@ class KeyboardSize(Enum):
 class DebugConfig(object):
     def __init__(self):
         """
-        Parameters
-        ----------
+        Configuration fot enable/disable features/items for development.
+
+        Note: unified vs unified + clean vs assembly:
+          assembly:        about 10 seconds
+          unified:         about  1 minute
+          unified + clean: about 10 minutes
+
         self.debug_enable: global switch to enable ir disable debug
 
         self.show_placement: outline the key placement for each key
@@ -47,11 +52,6 @@ class DebugConfig(object):
         self.show_invisibles: force render placeholder components
         self.hide_slots: removes all slots from export/view
         self.hide_connectors: removes all connectors from export/view
-
-        unified vs unified + clean vs assembly:
-        assembly:        about 10 seconds
-        unified:         about  1 minute
-        unified + clean: about 10 minutes
 
         self.unify_in_cadquery_editor: unifies otherwise assemblies the rendered view; False recommended
         self.unify_in_step_export: unifies otherwise assemblies the rendered view; if True slower else very fast; True recommended
@@ -65,7 +65,7 @@ class DebugConfig(object):
 
         self.show_placement = False  # type: bool
         self.show_key_origin = False  # type: bool
-        self.show_key_name = True  # type: bool
+        self.show_key_name = False  # type: bool
         self.show_key_cap = False  # type: bool
         self.show_key_switch = False  # type: bool
 

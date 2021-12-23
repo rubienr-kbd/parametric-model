@@ -10,29 +10,28 @@ class KeyUtils(object):
     @staticmethod
     def set_position_relative_to(key: KeyBase, ref_key: KeyBase, pos: Direction) -> None:
         """
-        Defines the key position as top/bottom left/right of the reference key.
+        Sets the key position as being top/bottom and left/right of the reference key.
         """
-        position = None  # type: Optional[Tuple[float,float,float]]
         if pos == Direction.TOP:
-            position = (
+            key.position = (
                 ref_key.position[0],
                 ref_key.position[1] + ref_key.depth / 2 + ref_key.clearance_top + key.clearance_bottom + key.depth / 2,
                 key.position[2])
 
         elif pos == Direction.BOTTOM:
-            position = (
+            key.position = (
                 ref_key.position[0],
                 ref_key.position[1] - ref_key.depth / 2 - ref_key.clearance_bottom - key.clearance_top - key.depth / 2,
                 key.position[2])
 
         elif pos == Direction.RIGHT:
-            position = (
+            key.position = (
                 ref_key.position[0] + ref_key.width / 2 + ref_key.clearance_right + key.clearance_left + key.width / 2,
                 ref_key.position[1],
                 key.position[2])
 
         elif pos == Direction.LEFT:
-            position = (
+            key.position = (
                 ref_key.position[0] - ref_key.width / 2 - ref_key.clearance_left - key.clearance_right - key.width / 2,
                 ref_key.position[1],
                 key.position[2])
@@ -40,10 +39,13 @@ class KeyUtils(object):
         else:
             assert False
 
-        key.position = position
-
     @staticmethod
     def connector(first_face: cadquery.Workplane, second_face: cadquery.Workplane) -> cadquery.Workplane:
+        """
+        Returns a loft/gap filler in between two faces.
+        @param first_face:
+        @param second_face:
+        """
 
         def get_wire(face):
             return face.first().wires().val()
@@ -56,7 +58,7 @@ class KeyUtils(object):
                       first_direction: Direction,
                       second_direction: Direction) -> cadquery.Workplane:
         """
-        Returns a loft/gap filler in between first and second key. The respective faces are specified by the direction.
+        Returns a loft/gap filler in between two key faces as specified the direction.
         @param first_key: the key to loft from
         @param second_key: the key to loft to
         @param first_direction: the face to loft from
@@ -124,8 +126,9 @@ class KeyUtils(object):
     @staticmethod
     def remove_cad_objects(key_matrix: List[List[Key]], remove_non_solids: bool) -> None:
         """
-        Filters out cad objects from view that must be computed due to dependencies.
+        Filters out cad objects from view that must be computed due to dependencies but shall not be rendered.
         @param key_matrix: pool of keys with pre-computed placement and cad objects
+        @param remove_non_solids: removes also objects such as placement, name or origin if True
         """
         row_idx = 0
         print("removing cad objects ...")
@@ -161,11 +164,11 @@ class KeyUtils(object):
     @staticmethod
     def squash(key_matrix: List[List[Key]], do_unify: bool, do_clean_union: bool) -> Union[cadquery.Workplane, cadquery.Assembly]:
         """
-
+        Squashes all available cad objects of any key to one unified compound or assembly.
         @param key_matrix: pool of keys with pre-computed placement and cad objects
-        @param do_unify: recommended True for export, False for cadquery editor (cq-editor)
-        @param do_clean_union: recommended False for unified export to step file
-        @return cadquery.Workplane if unify requested, of cadquery.Assembly otherwise
+        @param do_unify: recommended True for step file, False for cadquery editor (cq-editor)
+        @param do_clean_union: recommended False for prototyping, True has weak the performance
+        @return cadquery.Workplane if do_unify else cadquery.Assembly
         """
         print("final assembly ({}) ...".format("union" if do_unify else "assembly"))
         assembly = cadquery.Assembly()
