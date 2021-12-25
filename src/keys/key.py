@@ -156,7 +156,7 @@ class KeyCap(KeyBox, Computeable, CadObject):
         self.width = 0  # type: float
         self.depth = 0  # type: float
 
-    def update(self, unit_width_factor: float = 1, unit_depth_factor: float = 1, unit_length: float = config.ModelConfig.key_base.unit_length, *args, **kwargs) -> None:
+    def update(self, unit_width_factor: float = 1, unit_depth_factor: float = 1, unit_length: float = config.MODEL_CONFIG.key_base.unit_length, *args, **kwargs) -> None:
         self.width = unit_width_factor * unit_length - self.width_clearance
         self.depth = unit_depth_factor * unit_length - self.depth_clearance
 
@@ -385,10 +385,10 @@ class Key(Computeable, CadKeyMixin):
     object_cache = ObjectCache(DEBUG)
 
     def __init__(self) -> None:
-        self.base = KeyBase(config.ModelConfig.key_base)
-        self.cap = KeyCap(config.ModelConfig.cap)
-        self.slot = KeySwitchSlot(config.ModelConfig.switch_slot)
-        self.switch = KeySwitch(config.ModelConfig.switch)
+        self.base = KeyBase(config.MODEL_CONFIG.key_base)
+        self.cap = KeyCap(config.MODEL_CONFIG.cap)
+        self.slot = KeySwitchSlot(config.MODEL_CONFIG.switch_slot)
+        self.switch = KeySwitch(config.MODEL_CONFIG.switch)
         self.connectors = KeyConnectors()
         self.cad_objects = CadObjects()
         self.name = ""  # type: str

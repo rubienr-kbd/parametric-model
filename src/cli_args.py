@@ -1,3 +1,4 @@
+import re
 from typing import List, Tuple, Optional
 import os.path
 import argparse
@@ -18,6 +19,7 @@ def get_eligible_models() -> List[Tuple[str, str]]:
     abs_dir = os.path.join(abs_dir, "keyboards")
 
     model_dirs = [d for d in os.listdir(abs_dir) if os.path.isdir(os.path.join(abs_dir, d))]
+    model_dirs = [d for d in model_dirs if re.match(r"^[a-zA-Z]", d)]
     models: List[Tuple[str, str]] = list()
 
     for model_name in model_dirs:

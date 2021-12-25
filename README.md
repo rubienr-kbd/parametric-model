@@ -46,8 +46,9 @@ what are non-aims
     python src/main.py --export
 
     # to render in cadquery editor  (usually takes seconds to render)
+    cd ./src
     cq-editor
-    # then load src/main.py from disk, do notstart with: cq-editor src/main.py
+    # then load main.py from disk, do notstart with cli args: cq-editor src/main.py
 
     # to start a dry run: will compute everything but not export anythong
     python src/main.py

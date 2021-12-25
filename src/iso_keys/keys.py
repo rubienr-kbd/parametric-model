@@ -1,5 +1,6 @@
 from types import MethodType
-from .config import ModelConfig
+from src import model_importer
+_cliargs, config = model_importer.import_config()
 from src.keys.canonical_keys import *
 
 
@@ -144,7 +145,7 @@ class IsoEnterKey(Key150Unit):
         super(IsoEnterKey, self).__init__()
         self.name = "ENT"
         self.base.unit_depth_factor = 2
-        self.base.position_offset = [0, - ModelConfig.key_base.unit_length / 2, 0]
+        self.base.position_offset = [0, - config.MODEL_CONFIG.key_base.unit_length / 2, 0]
 
         def compute(inner_self: KeyCap, outer_self=self, *_args, **_kwargs) -> None:
             upper_part = cadquery.Workplane() \
@@ -192,7 +193,7 @@ class IsoNumpadEnterKey(Key100Unit):
         super(IsoNumpadEnterKey, self).__init__()
         self.name = "NENT"
         self.base.unit_depth_factor = 2
-        self.base.position_offset = [0, - ModelConfig.key_base.unit_length / 2, 0]
+        self.base.position_offset = [0, - config.MODEL_CONFIG.key_base.unit_length / 2, 0]
 
 
 class IsoNumpadPlusKey(Key100Unit):
@@ -209,12 +210,12 @@ class IsoNumpadPlusKey(Key100Unit):
         super(IsoNumpadPlusKey, self).__init__()
         self.name = "NPLU"
         self.base.unit_depth_factor = 2
-        self.base.position_offset = [0, - ModelConfig.key_base.unit_length / 2, 0]
+        self.base.position_offset = [0, - config.MODEL_CONFIG.key_base.unit_length / 2, 0]
 
 
 class IsoNumpadInsKey(Key200Unit):
     """
-          ↓ 2 unitsy
+          ↓ 2 units
     ╭──────────╮
     │  0 INS   │ ← 1 unit
     ╰──────────╯
@@ -223,7 +224,7 @@ class IsoNumpadInsKey(Key200Unit):
     def __init__(self):
         super(IsoNumpadInsKey, self).__init__()
         self.name = "NINS"
-        self.base.clearance_left = ModelConfig.group.clearance_x_numpad
+        self.base.clearance_left = config.MODEL_CONFIG.group.clearance_x_numpad
 
 
 class ArrowDownKey(CharacterKey):
@@ -253,8 +254,8 @@ class EscapeKey(CharacterKey):
     def __init__(self):
         super(EscapeKey, self).__init__()
         self.name = "ESC"
-        self.base.clearance_right = ModelConfig.group.clearance_x_f_group / 2
-        self.base.clearance_bottom = ModelConfig.group.clearance_y_f_group / 2
+        self.base.clearance_right = config.MODEL_CONFIG.group.clearance_x_f_group / 2
+        self.base.clearance_bottom = config.MODEL_CONFIG.group.clearance_y_f_group / 2
 
 
 class F1Key(CharacterKey):
@@ -268,7 +269,7 @@ class F1Key(CharacterKey):
     def __init__(self):
         super(F1Key, self).__init__()
         self.name = "F1"
-        self.base.clearance_left = ModelConfig.group.clearance_x_f_group / 2
+        self.base.clearance_left = config.MODEL_CONFIG.group.clearance_x_f_group / 2
 
 
 class F4Key(CharacterKey):
@@ -282,7 +283,7 @@ class F4Key(CharacterKey):
     def __init__(self):
         super(F4Key, self).__init__()
         self.name = "F4"
-        self.base.clearance_right = ModelConfig.group.clearance_x_f_group / 2
+        self.base.clearance_right = config.MODEL_CONFIG.group.clearance_x_f_group / 2
 
 
 class F5Key(CharacterKey):
@@ -296,7 +297,7 @@ class F5Key(CharacterKey):
     def __init__(self):
         super(F5Key, self).__init__()
         self.name = "F5"
-        self.base.clearance_left = ModelConfig.group.clearance_x_f_group / 2
+        self.base.clearance_left = config.MODEL_CONFIG.group.clearance_x_f_group / 2
 
 
 class F8Key(CharacterKey):
@@ -310,7 +311,7 @@ class F8Key(CharacterKey):
     def __init__(self):
         super(F8Key, self).__init__()
         self.name = "F8"
-        self.base.clearance_right = ModelConfig.group.clearance_x_f_group / 2
+        self.base.clearance_right = config.MODEL_CONFIG.group.clearance_x_f_group / 2
 
 
 class F9Key(CharacterKey):
@@ -324,7 +325,7 @@ class F9Key(CharacterKey):
     def __init__(self):
         super(F9Key, self).__init__()
         self.name = "F9"
-        self.base.clearance_left = ModelConfig.group.clearance_x_f_group / 2
+        self.base.clearance_left = config.MODEL_CONFIG.group.clearance_x_f_group / 2
 
 
 class F12Key(CharacterKey):
@@ -344,7 +345,7 @@ class PrintKey(CharacterKey):
     def __init__(self):
         super(PrintKey, self).__init__()
         self.name = "PRT"
-        self.base.clearance_left = ModelConfig.group.clearance_x_arrow_group
+        self.base.clearance_left = config.MODEL_CONFIG.group.clearance_x_arrow_group
 
 
 class InsertKey(CharacterKey):
@@ -358,7 +359,7 @@ class InsertKey(CharacterKey):
     def __init__(self):
         super(InsertKey, self).__init__()
         self.name = "INS"
-        self.base.clearance_left = ModelConfig.group.clearance_x_arrow_group
+        self.base.clearance_left = config.MODEL_CONFIG.group.clearance_x_arrow_group
 
 
 class DeleteKey(CharacterKey):
@@ -372,7 +373,7 @@ class DeleteKey(CharacterKey):
     def __init__(self):
         super(DeleteKey, self).__init__()
         self.name = "DEL"
-        self.base.clearance_left = ModelConfig.group.clearance_x_arrow_group
+        self.base.clearance_left = config.MODEL_CONFIG.group.clearance_x_arrow_group
 
 
 class NumpadDeleteKey(CharacterKey):
@@ -385,7 +386,7 @@ class ArrowLeftKey(CharacterKey):
     def __init__(self):
         super(ArrowLeftKey, self).__init__()
         self.name = "LAR"
-        self.base.clearance_left = ModelConfig.group.clearance_x_arrow_group
+        self.base.clearance_left = config.MODEL_CONFIG.group.clearance_x_arrow_group
 
 
 class ArrowUpKey(CharacterKey):
@@ -393,8 +394,8 @@ class ArrowUpKey(CharacterKey):
         super(ArrowUpKey, self).__init__()
         self.name = "UAR"
         self.clearance_left = \
-            ModelConfig.group.clearance_x_f_group + ModelConfig.key_base.clearance_x + \
-            ModelConfig.key_base.clearance_x + ModelConfig.key_base.unit_length + ModelConfig.key_base.unit_length / 2
+            config.MODEL_CONFIG.group.clearance_x_f_group + config.MODEL_CONFIG.key_base.clearance_x + \
+            config.MODEL_CONFIG.key_base.clearance_x + config.MODEL_CONFIG.key_base.unit_length + config.MODEL_CONFIG.key_base.unit_length / 2
 
 
 class Key100UnitNumpadSpacer(Key):
@@ -408,7 +409,7 @@ class Key100UnitNumpadSpacer(Key):
     def __init__(self) -> None:
         super(Key100UnitNumpadSpacer, self).__init__()
         self.name = "sn100"
-        self.base.clearance_left = ModelConfig.group.clearance_x_numpad
+        self.base.clearance_left = config.MODEL_CONFIG.group.clearance_x_numpad
 
 
 class Key100UnitNumpadSpacerFilled(Key100UnitNumpadSpacer):
@@ -444,7 +445,7 @@ class Key100UnitUpArrowSpacer(Key100UnitSpacer):
     def __init__(self) -> None:
         super(Key100UnitUpArrowSpacer, self).__init__()
         self.name = "sa100"
-        self.base.clearance_left = ModelConfig.group.clearance_x_arrow_group
+        self.base.clearance_left = config.MODEL_CONFIG.group.clearance_x_arrow_group
         self.base.is_visible = True
         self.base.is_filled = True
         self.base.is_connected = True

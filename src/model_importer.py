@@ -17,7 +17,7 @@ def import_config():
 
     importlib.invalidate_caches()
     model_config = importlib.import_module(".config", model_module)
-    model_config.ModelConfig.matrix.layout_size = args.keyboard_size
+    model_config.MODEL_CONFIG.matrix.layout_size = args.keyboard_size
 
     return args, model_config
 

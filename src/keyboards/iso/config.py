@@ -110,7 +110,7 @@ class MatrixConfig(object):
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-class ModelConfig(object):
+class _ModelConfig(object):
     """
     Global configuration.
     """
@@ -120,3 +120,6 @@ class ModelConfig(object):
     switch_slot = KeySwitchSlotConfig()
     group = GroupConfig()
     matrix = MatrixConfig()
+
+
+MODEL_CONFIG = _ModelConfig()

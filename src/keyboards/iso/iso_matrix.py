@@ -1,4 +1,4 @@
-from .iso_keys import *
+from src.iso_keys.keys import *
 from src.cli_args import cli_args
 from src.keys.canonical_keys import Key100UnitSpacerConnected, Key100UnitSpacerFilled, Key125UnitSpacer
 from src.keys.key import Key
