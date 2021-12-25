@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-import importlib
+import os
+import sys
+sys.path.append(os.getcwd())  # cq-editor workaround
 from pathlib import Path
-from time import perf_counter
-
-from iso_keys import *
-from utils import KeyUtils
-
-kbd_matrix_builder = importlib.import_module(cliargs.matrix)
-
 import cadquery
+from time import perf_counter
+from cfg.debug import DEBUG
+from model_importer import import_config, import_builder
+cliargs, model_config = import_config()
+builder = import_builder()
+from keys.utils import KeyUtils
 
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -17,11 +18,11 @@ import cadquery
 def run(perf_counter_begin: float) -> None:
     pc_1 = perf_counter()
     is_invoked_by_cli = __name__ == "__main__"
-    do_unify = GlobalConfig.debug.export_unified if is_invoked_by_cli else GlobalConfig.debug.render_unified
-    do_clean_union = GlobalConfig.debug.export_cleaned_union if is_invoked_by_cli else GlobalConfig.debug.render_cleaned_union
+    do_unify = DEBUG.export_unified if is_invoked_by_cli else DEBUG.render_unified
+    do_clean_union = DEBUG.export_cleaned_union if is_invoked_by_cli else DEBUG.render_cleaned_union
 
     print("{:.3f}s elapsed for loading".format(pc_1 - perf_counter_begin))
-    key_matrix = kbd_matrix_builder.compute(for_export=cliargs.export)
+    key_matrix = builder.compute(for_export=cliargs.export)
     pc_2 = perf_counter()
     print("{:.3f}s elapsed for construction".format(pc_2 - pc_1))
 

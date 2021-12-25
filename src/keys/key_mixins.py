@@ -1,16 +1,13 @@
 from __future__ import annotations
-from typing import Union, List, Tuple
+from typing import TYPE_CHECKING, Union, List, Tuple
 from enum import Enum
-
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from key import Key
-
 import cadquery
+if TYPE_CHECKING:
+    from .key import Key
+from src.cfg.debug import DEBUG
+
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-from config import GlobalConfig
 
 
 class Direction(Enum):
@@ -189,9 +186,9 @@ class CadKeyMixin(object):
     def final_post_compute(self: Key):
         self.post_compute_cad_key_base()
 
-        if GlobalConfig.debug.render_name:
+        if DEBUG.render_name:
             self.cad_objects.name = self.post_compute_key_name()
-        if GlobalConfig.debug.render_origin:
+        if DEBUG.render_origin:
             self.cad_objects.origin = self.post_compute_key_origin()
 
         self.post_compute_cad_cap()

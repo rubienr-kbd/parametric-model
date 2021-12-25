@@ -1,8 +1,13 @@
-from iso_keys import *
-from utils import KeyUtils
+from .iso_keys import *
+from src.cli_args import cli_args
+from src.keys.canonical_keys import Key100UnitSpacerConnected, Key100UnitSpacerFilled, Key125UnitSpacer
+from src.keys.key import Key
+from src.keys.key_mixins import Direction
+from src.keyboard_size import KeyboardSize
 
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+from src.keys.utils import KeyUtils
 
 
 def build_key_row_0(size: KeyboardSize) -> List[Key]:
@@ -255,7 +260,7 @@ def build_key_matrix() -> List[List[Key]]:
     @return: matrix of key objects
     """
     print("compute key matrix ...")
-    size = GlobalConfig.matrix.layout_size
+    size = cli_args().keyboard_size
     assert size not in [KeyboardSize.S40, KeyboardSize.S60, KeyboardSize.S65, KeyboardSize.S75]
 
     matrix = [

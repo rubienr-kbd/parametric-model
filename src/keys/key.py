@@ -1,11 +1,10 @@
-import math
 from typing import Optional, Dict
+import math
+from .key_mixins import *
+from src import model_importer
+_cliargs, config = model_importer.import_config()
 
-from cadquery import Shape, Vector
 
-from config import *
-from key_mixins import *
-import cadquery
 
 """
 Indexing and terms:
@@ -77,7 +76,7 @@ Construction strategy:
 
 class ObjectCache(object):
 
-    def __init__(self, config: DebugConfig):
+    def __init__(self, config: DEBUG):
         self.container = dict()  # type: Dict[str, cadquery.Workplane]
         self.enabled = not config.disable_object_cache
 
@@ -108,7 +107,7 @@ class ObjectCache(object):
 
 
 class KeyBase(KeyPlane, Computeable, CadObject, KeyBaseMixin):
-    def __init__(self, config: KeyBaseConfig) -> None:
+    def __init__(self, config: config.KeyBaseConfig) -> None:
         super(KeyBase, self).__init__()
         self.unit_length = config.unit_length  # type: float
         self.unit_width_factor = 1  # type: float
@@ -147,7 +146,7 @@ class KeyBase(KeyPlane, Computeable, CadObject, KeyBaseMixin):
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 class KeyCap(KeyBox, Computeable, CadObject):
-    def __init__(self, config: KeyCapConfig) -> None:
+    def __init__(self, config: config.KeyCapConfig) -> None:
         super(KeyCap, self).__init__()
         self.width_clearance = config.width_clearance  # type: float
         self.depth_clearance = config.depth_clearance  # type: float
@@ -157,7 +156,7 @@ class KeyCap(KeyBox, Computeable, CadObject):
         self.width = 0  # type: float
         self.depth = 0  # type: float
 
-    def update(self, unit_width_factor: float = 1, unit_depth_factor: float = 1, unit_length: float = GlobalConfig.key_base.unit_length, *args, **kwargs) -> None:
+    def update(self, unit_width_factor: float = 1, unit_depth_factor: float = 1, unit_length: float = config.ModelConfig.key_base.unit_length, *args, **kwargs) -> None:
         self.width = unit_width_factor * unit_length - self.width_clearance
         self.depth = unit_depth_factor * unit_length - self.depth_clearance
 
@@ -185,7 +184,7 @@ class KeyCap(KeyBox, Computeable, CadObject):
 
 
 class KeySwitchSlot(KeyBox, Computeable, CadObject):
-    def __init__(self, config: KeySwitchSlotConfig) -> None:
+    def __init__(self, config: config.KeySwitchSlotConfig) -> None:
         super(KeySwitchSlot, self).__init__()
         self.slot_width = config.width  # type: float
         self.slot_depth = config.depth  # type: float
@@ -267,7 +266,7 @@ class KeySwitchSlot(KeyBox, Computeable, CadObject):
         else:
             assert False
 
-    def get_cad_corner_vertex(self, direction_x: Direction, direction_y: Direction, direction_z: Direction) -> Vector:
+    def get_cad_corner_vertex(self, direction_x: Direction, direction_y: Direction, direction_z: Direction) -> cadquery.Vector:
         """
         Example:
             e = cadquery.Edge.makeLine(
@@ -358,7 +357,7 @@ class KeyConnectors(IterableObject):
 
 class KeySwitch(KeyBox, Computeable, CadObject):
 
-    def __init__(self, config: KeySwitchConfig) -> None:
+    def __init__(self, config: config.KeySwitchConfig) -> None:
         super(KeySwitch, self).__init__()
         self.width = config.width  # type: float
         self.depth = config.depth  # type: float
@@ -383,13 +382,13 @@ class CadObjects(IterableObject):
 
 
 class Key(Computeable, CadKeyMixin):
-    object_cache = ObjectCache(GlobalConfig.debug)
+    object_cache = ObjectCache(DEBUG)
 
     def __init__(self) -> None:
-        self.base = KeyBase(GlobalConfig.key_base)
-        self.cap = KeyCap(GlobalConfig.cap)
-        self.slot = KeySwitchSlot(GlobalConfig.switch_slot)
-        self.switch = KeySwitch(GlobalConfig.switch)
+        self.base = KeyBase(config.ModelConfig.key_base)
+        self.cap = KeyCap(config.ModelConfig.cap)
+        self.slot = KeySwitchSlot(config.ModelConfig.switch_slot)
+        self.switch = KeySwitch(config.ModelConfig.switch)
         self.connectors = KeyConnectors()
         self.cad_objects = CadObjects()
         self.name = ""  # type: str
@@ -410,7 +409,7 @@ class Key(Computeable, CadKeyMixin):
         self.slot.compute(basis_face=self.cap.get_cad_object().faces("<Z"),
                           do_fill=self.base.is_filled,
                           cache=Key.object_cache)
-        if GlobalConfig.debug.render_switch:
+        if DEBUG.render_switch:
             self.switch.compute()
         # translate cad objects to final position
         self.final_post_compute()

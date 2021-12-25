@@ -31,9 +31,11 @@ what are non-aims
 ## Run the script - prerequisites
 
 * active anaconda environment with 
-  * cadquery installed and 
+  * [cadquery](https://cadquery.readthedocs.io/en/latest/installation.html) installed (`conda install -c cadquery -c conda-forge cadquery=master`) and 
   * python interpreter pointing to the anaconda installation and 
-  * optionally cadquery editor installed (dq-editor)
+  * optionally: 
+    * [cadquery editor](https://github.com/CadQuery/CQ-editor) installed (`conda install -c cadquery -c conda-forge cq-editor=master`)
+    * pycharm (add `~/miniconda3/bin/python` Python interpreter).
   
 ### Run the script
 

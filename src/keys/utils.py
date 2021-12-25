@@ -1,6 +1,4 @@
-from key import *
-import cadquery
-
+from .key import *
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -136,25 +134,25 @@ class KeyUtils(object):
             print("row {}".format(row_idx))
             for key in row:
                 print("  {:7}: ".format(key.name), end=" ")
-                if not GlobalConfig.debug.render_placement or remove_non_solids:
+                if not DEBUG.render_placement or remove_non_solids:
                     key.cad_objects.plane = None
                     print("placement", end=" ")
-                if not GlobalConfig.debug.render_origin or remove_non_solids:
+                if not DEBUG.render_origin or remove_non_solids:
                     key.cad_objects.origin = None
                     print("origin", end=" ")
-                if not GlobalConfig.debug.render_name or remove_non_solids:
+                if not DEBUG.render_name or remove_non_solids:
                     key.cad_objects.name = None
                     print("name", end=" ")
-                if not GlobalConfig.debug.render_cap:
+                if not DEBUG.render_cap:
                     key.cad_objects.cap = None
                     print("cap", end=" ")
-                if not GlobalConfig.debug.render_slots:
+                if not DEBUG.render_slots:
                     key.cad_objects.slot = None
                     print("slot", end=" ")
-                if not GlobalConfig.debug.render_switch:
+                if not DEBUG.render_switch:
                     key.cad_objects.switch = None
                     print("switch", end=" ")
-                if not GlobalConfig.debug.render_connectors:
+                if not DEBUG.render_connectors:
                     key.cad_objects.connectors = []
                     print("connectors", end=" ")
                 print("")
@@ -180,7 +178,7 @@ class KeyUtils(object):
             for key in row:
                 color = cadquery.Color(0, 0, 1, 0.5) if key.base.is_visible else cadquery.Color(1, 1, 1, 0.125)
                 print("  {:7}:".format(key.name), end=" ")
-                if not key.base.is_visible and not GlobalConfig.debug.show_invisibles:
+                if not key.base.is_visible and not DEBUG.show_invisibles:
                     continue
 
                 # key components
