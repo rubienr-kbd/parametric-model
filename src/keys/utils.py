@@ -96,10 +96,11 @@ class KeyUtils(object):
         print("\ncompute key to key connectors: done")
 
     @staticmethod
-    def connect_connectors(connection_info: List[Tuple[int, int, Direction, Direction, int, int, Direction, Direction]],
+    def connect_connectors(connection_info: List[Tuple[int, int, Direction, Direction, Direction, int, int, Direction, Direction, Direction]],
                            key_matrix: List[List[Key]]) -> None:
         print("compute connector gap filler ({}) ...".format(len(connection_info)))
-        for a_row, a_idx, a_direction_x, a_direction_y, b_row, b_col, b_direction_x, b_direction_y in connection_info:
+        for a_row, a_idx, a_direction_x, a_direction_y, a_dest_connector,\
+            b_row, b_col, b_direction_x, b_direction_y, b_dest_connector in connection_info:
             a = key_matrix[a_row][a_idx]
             b = key_matrix[b_row][b_col]
 
@@ -112,8 +113,8 @@ class KeyUtils(object):
                 loft = KeyUtils.connector(
                     a_connector.get_cad_face(a_direction_y),
                     b_connector.get_cad_face(b_direction_y))
-                a.connectors.get_connector(a_direction_y)._cad_object = loft
-                b.connectors.get_connector(b_direction_y)._cad_object = loft
+                a.connectors.get_connector(a_dest_connector)._cad_object = loft
+                b.connectors.get_connector(b_dest_connector)._cad_object = loft
 
                 a.expose_cad_objects()
                 b.expose_cad_objects()

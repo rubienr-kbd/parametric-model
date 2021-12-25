@@ -5,7 +5,6 @@ from src.keys.key import Key
 from src.keys.key_mixins import Direction
 from src.keyboard_size import KeyboardSize
 
-
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 from src.keys.utils import KeyUtils
 
@@ -344,25 +343,24 @@ def get_key_connection_mapping(key_matrix: List[List[Key]]) -> List[Tuple[int, i
 
     # connections in between adjacent rows 0 to 1
     result.extend(((0, k, Direction.BACK, 1, k, Direction.FRONT) for k in range(0, 3)))  # LCTL to LALT
-    result.extend(((0, k, Direction.BACK, 1, k + 6, Direction.FRONT) for k in range(4, 8)))  # RALT to RCTL
-    result.extend(((0, k, Direction.BACK, 1, k + 5, Direction.FRONT) for k in range(8, 11)))  # LARR to numpad
-    result.extend([(0, 11, Direction.BACK, 1, 13 + 4, Direction.FRONT)])  #
-    result.extend([(0, 12, Direction.BACK, 1, 14 + 4, Direction.FRONT)])  #
+    result.extend(((0, k, Direction.BACK, 1, k + 6, Direction.FRONT) for k in range(4, 7)))  # LALT to MENU
+    result.extend(((0, k, Direction.BACK, 1, k + 5, Direction.FRONT) for k in range(8, 12)))  # LARR to numpad INS
+    result.extend([(0, 12, Direction.BACK, 1, 12 + 6, Direction.FRONT)])  # numpad DEL
 
-    # connections in between adjacent rows 1 to 2
+    ## connections in between adjacent rows 1 to 2
     result.extend(((1, k, Direction.BACK, 2, k, Direction.FRONT) for k in range(0, 13)))  # LSFT to RSFT
-    result.extend(((1, k - 1, Direction.BACK, 2, k, Direction.FRONT) for k in range(14, len(key_matrix[2]))))  # spacer to numpad
+    result.extend(((1, k - 1, Direction.BACK, 2, k, Direction.FRONT) for k in range(14, len(key_matrix[2]))))  # LARR spacer to numpad
 
-    # connections in between adjacent rows 2 to 3
-    result.extend(((2, k, Direction.BACK, 3, k, Direction.FRONT) for k in range(0, 13)))  # CSFT to #
-    result.extend(((2, k, Direction.BACK, 3, k, Direction.FRONT) for k in range(14, len(key_matrix[2]))))  # spacer to numpad
+    ## connections in between adjacent rows 2 to 3
+    # result.extend(((2, k, Direction.BACK, 3, k, Direction.FRONT) for k in range(0, 13)))  # CSFT to #
+    # result.extend(((2, k, Direction.BACK, 3, k, Direction.FRONT) for k in range(14, len(key_matrix[2]))))  # spacer to numpad
 
-    # connections in between adjacent rows 3 to 4
-    result.extend(((3, k, Direction.BACK, 4, k, Direction.FRONT) for k in range(0, len(key_matrix[3]))))  # TAB to numpad
+    ## connections in between adjacent rows 3 to 4
+    # result.extend(((3, k, Direction.BACK, 4, k, Direction.FRONT) for k in range(0, len(key_matrix[3]))))  # TAB to numpad
 
-    # connections in between adjacent rows 4 to 5
-    result.extend(((4, k, Direction.BACK, 5, k, Direction.FRONT) for k in range(0, len(key_matrix[5]))))  # ESC to F12
-    result.extend([(4, len(key_matrix[5]), Direction.BACK, 5, len(key_matrix[5]) - 1, Direction.FRONT)])  # ESC to F12
+    ## connections in between adjacent rows 4 to 5
+    # result.extend(((4, k, Direction.BACK, 5, k, Direction.FRONT) for k in range(0, len(key_matrix[5]))))  # ESC to F12
+    # result.extend([(4, len(key_matrix[5]), Direction.BACK, 5, len(key_matrix[5]) - 1, Direction.FRONT)])  # ESC to F12
 
     return result
 
@@ -375,25 +373,26 @@ def get_connector_connection_mapping(key_matrix: List[List[Key]]) -> List[Tuple[
     Specifies which key-connectors from :func:`iso_matrix.get_key_connection_mapping` and which faces are to be connected.
     @param key_matrix: pool of keys with pre-computed placement and cad objects
     """
-    result = list()  # type: List[Tuple[int, int, Direction,  Direction, int, int, Direction,  Direction]]
+    result = list()  # type: List[Tuple[int, int, Direction,  Direction, Direction, int, int, Direction,  Direction, Direction,]]
 
     # rows 0 to 1
-    result.extend(((0, k, Direction.RIGHT, Direction.BACK, 1, k, Direction.RIGHT, Direction.FRONT) for k in range(0, 4)))  # LCTL to LALT
-    result.extend(((0, k, Direction.RIGHT, Direction.BACK, 1, k + 6, Direction.RIGHT, Direction.FRONT) for k in range(4, 8)))  # RALT to RCTL
-    result.extend(((0, k, Direction.RIGHT, Direction.BACK, 1, k + 5, Direction.RIGHT, Direction.FRONT) for k in range(8, 11)))  # RALT to RCTL
+    result.extend(((0, k, Direction.RIGHT, Direction.BACK, Direction.BACK_RIGHT, 1, k, Direction.RIGHT, Direction.FRONT, Direction.FRONT_RIGHT) for k in range(0, 3)))  # LCTL to LALT
+    result.extend(((0, k, Direction.RIGHT, Direction.BACK, Direction.BACK_RIGHT, 1, k + 6, Direction.RIGHT, Direction.FRONT, Direction.FRONT_RIGHT) for k in range(3, 6)))  # RALT to FN
+    result.extend(((0, k, Direction.RIGHT, Direction.BACK, Direction.BACK_RIGHT, 1, k + 5, Direction.RIGHT, Direction.FRONT, Direction.FRONT_RIGHT) for k in range(7, 11)))  # RCTL to numpad NINS
+    result.extend(((0, k, Direction.RIGHT, Direction.BACK, Direction.BACK_RIGHT, 1, k + 6, Direction.RIGHT, Direction.FRONT, Direction.FRONT_RIGHT) for k in range(11, 13)))  # numpad NDEL
 
     # rows 1 to 2
-    result.extend(((1, k, Direction.RIGHT, Direction.BACK, 2, k, Direction.RIGHT, Direction.FRONT) for k in range(0, 12)))  # LSFT to RSFT
-    result.extend(((1, k, Direction.RIGHT, Direction.BACK, 2, k + 1, Direction.RIGHT, Direction.FRONT) for k in range(13, len(key_matrix[2]) - 1)))  # spacer to numpad
+    result.extend(((1, k, Direction.RIGHT, Direction.BACK, Direction.BACK_RIGHT, 2, k, Direction.RIGHT, Direction.FRONT, Direction.FRONT_RIGHT) for k in range(0, 12)))  # LSFT to RSFT
+    result.extend(((1, k, Direction.RIGHT, Direction.BACK, Direction.BACK_RIGHT, 2, k + 1, Direction.RIGHT, Direction.FRONT, Direction.FRONT_RIGHT) for k in range(13, len(key_matrix[2]) - 1)))  # spacer to numpad
 
     # rows 2 to 3
-    result.extend(((2, k, Direction.RIGHT, Direction.BACK, 3, k, Direction.RIGHT, Direction.FRONT) for k in range(0, 12)))  # CSFT to #
-    result.extend(((2, k, Direction.RIGHT, Direction.BACK, 3, k, Direction.RIGHT, Direction.FRONT) for k in range(13, len(key_matrix[2]) - 1)))  # spacer to numpad
+    # result.extend(((2, k, Direction.RIGHT, Direction.BACK, 3, k, Direction.RIGHT, Direction.FRONT) for k in range(0, 12)))  # CSFT to #
+    # result.extend(((2, k, Direction.RIGHT, Direction.BACK, 3, k, Direction.RIGHT, Direction.FRONT) for k in range(13, len(key_matrix[2]) - 1)))  # spacer to numpad
 
     # rows 3 to 4
-    result.extend(((3, k, Direction.RIGHT, Direction.BACK, 4, k, Direction.RIGHT, Direction.FRONT) for k in range(0, len(key_matrix[3]) - 1)))  # TAB to numpad
+    # result.extend(((3, k, Direction.RIGHT, Direction.BACK, 4, k, Direction.RIGHT, Direction.FRONT) for k in range(0, len(key_matrix[3]) - 1)))  # TAB to numpad
 
     # rows 4 to 5
-    result.extend(((4, k, Direction.RIGHT, Direction.BACK, 5, k, Direction.RIGHT, Direction.FRONT) for k in range(0, len(key_matrix[5]) - 1)))  # ESC to F12
+    # result.extend(((4, k, Direction.RIGHT, Direction.BACK, 5, k, Direction.RIGHT, Direction.FRONT) for k in range(0, len(key_matrix[5]) - 1)))  # ESC to F12
 
     return result
