@@ -1,5 +1,6 @@
 from .key import *
 
+
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -51,6 +52,25 @@ class KeyUtils(object):
         return cadquery.Workplane(cadquery.Solid.makeLoft([get_wire(first_face), get_wire(second_face)]))
 
     @staticmethod
+    def loft(bottom_top_points: List[Tuple[cadquery.Vector, cadquery.Vector]]) -> cadquery.Workplane:
+        bottom_top_tuples = [list(edge) for edge in list(zip(*bottom_top_points))]
+        bottom_points = bottom_top_tuples[0]
+        top_points = bottom_top_tuples[1]
+
+        edges_bottom = []
+        for i in range(1, len(bottom_points)):
+            edges_bottom.append(cadquery.Edge.makeLine(bottom_points[i - 1], bottom_points[i]))
+
+        edges_top = []
+        for i in range(1, len(top_points)):
+            edges_top.append(cadquery.Edge.makeLine(top_points[i - 1], top_points[i]))
+
+        loft = cadquery.Workplane(
+            cadquery.Solid.makeLoft([cadquery.Wire.assembleEdges(edges_bottom),
+                                     cadquery.Wire.assembleEdges(edges_top)]))
+        return loft
+
+    @staticmethod
     def key_connector(first_key: Key,
                       second_key: Key,
                       first_direction: Direction,
@@ -86,8 +106,8 @@ class KeyUtils(object):
             if a.slot.has_cad_object() and b.slot.has_cad_object():
                 print(".", end="")
                 loft = KeyUtils.key_connector(a, b, a_direction_x, b_direction_x)
-                a.connectors.get_connector(a_direction_x)._cad_object = loft
-                b.connectors.get_connector(b_direction_x)._cad_object = loft
+                a.connectors.get_connector(a_direction_x).set_cad_object(loft)
+                b.connectors.get_connector(b_direction_x).set_cad_object(loft)
 
                 a.expose_cad_objects()
                 b.expose_cad_objects()
@@ -99,7 +119,7 @@ class KeyUtils(object):
     def connect_connectors(connection_info: List[Tuple[int, int, Direction, Direction, Direction, int, int, Direction, Direction, Direction]],
                            key_matrix: List[List[Key]]) -> None:
         print("compute connector gap filler ({}) ...".format(len(connection_info)))
-        for a_row, a_idx, a_direction_x, a_direction_y, a_dest_connector,\
+        for a_row, a_idx, a_direction_x, a_direction_y, a_dest_connector, \
             b_row, b_col, b_direction_x, b_direction_y, b_dest_connector in connection_info:
             a = key_matrix[a_row][a_idx]
             b = key_matrix[b_row][b_col]
@@ -113,14 +133,28 @@ class KeyUtils(object):
                 loft = KeyUtils.connector(
                     a_connector.get_cad_face(a_direction_y),
                     b_connector.get_cad_face(b_direction_y))
-                a.connectors.get_connector(a_dest_connector)._cad_object = loft
-                b.connectors.get_connector(b_dest_connector)._cad_object = loft
+                a.connectors.get_connector(a_dest_connector).set_cad_object(loft)
+                b.connectors.get_connector(b_dest_connector).set_cad_object(loft)
 
                 a.expose_cad_objects()
                 b.expose_cad_objects()
             else:
                 print("x", end="")
         print("\ncompute connector gap filler: done")
+
+    @staticmethod
+    def connect_lofts(connection_info: List[Tuple[int, int, List[Tuple[cadquery.Vector, cadquery.Vector]], Direction]],
+                      key_matrix: List[List[Key]]) -> None:
+        print("compute loft gap filler ({}) ...".format(len(connection_info)))
+
+        for gap_filler in connection_info:
+            row, col, bottom_top_points, dest_direction = gap_filler
+            loft = KeyUtils.loft(bottom_top_points)
+            key = key_matrix[row][col]
+            key.connectors.get_connector(dest_direction).set_cad_object(loft)
+            key.expose_cad_objects()
+
+        print("\ncompute loft gap filler: done")
 
     @staticmethod
     def remove_cad_objects(key_matrix: List[List[Key]], remove_non_solids: bool) -> None:

@@ -27,6 +27,8 @@ def compute(**kwargs) -> List[List[Key]]:
     KeyUtils.connect_keys(conn_map, key_matrix)
     conn_map = get_connector_connection_mapping(key_matrix)
     KeyUtils.connect_connectors(conn_map, key_matrix)
+    conn_map = get_corner_loft_mapping(key_matrix)
+    KeyUtils.connect_lofts(conn_map, key_matrix)
     # n.
     kwargs.get('for_export', False)
     KeyUtils.remove_cad_objects(key_matrix, remove_non_solids=kwargs.get('for_export', False))

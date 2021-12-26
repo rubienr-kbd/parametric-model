@@ -368,7 +368,7 @@ def get_key_connection_mapping(key_matrix: List[List[Key]]) -> List[Tuple[int, i
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-def get_connector_connection_mapping(key_matrix: List[List[Key]]) -> List[Tuple[int, int, Direction, Direction, int, int, Direction, Direction]]:
+def get_connector_connection_mapping(key_matrix: List[List[Key]]) -> List[Tuple[int, int, Direction, Direction, Direction, int, int, Direction, Direction, Direction]]:
     """
     Specifies which key-connectors from :func:`iso_matrix.get_key_connection_mapping` and which faces are to be connected.
     @param key_matrix: pool of keys with pre-computed placement and cad objects
@@ -383,7 +383,8 @@ def get_connector_connection_mapping(key_matrix: List[List[Key]]) -> List[Tuple[
 
     # rows 1 to 2
     result.extend(((1, k, Direction.RIGHT, Direction.BACK, Direction.BACK_RIGHT, 2, k, Direction.RIGHT, Direction.FRONT, Direction.FRONT_RIGHT) for k in range(0, 12)))  # LSFT to RSFT
-    result.extend(((1, k, Direction.RIGHT, Direction.BACK, Direction.BACK_RIGHT, 2, k + 1, Direction.RIGHT, Direction.FRONT, Direction.FRONT_RIGHT) for k in range(13, len(key_matrix[2]) - 1)))  # spacer to numpad
+    result.extend(((1, k, Direction.RIGHT, Direction.BACK, Direction.BACK_RIGHT, 2, k + 1, Direction.RIGHT, Direction.FRONT, Direction.FRONT_RIGHT) for k in
+                   range(13, len(key_matrix[2]) - 1)))  # spacer to numpad
 
     # rows 2 to 3
     # result.extend(((2, k, Direction.RIGHT, Direction.BACK, 3, k, Direction.RIGHT, Direction.FRONT) for k in range(0, 12)))  # CSFT to #
@@ -394,5 +395,30 @@ def get_connector_connection_mapping(key_matrix: List[List[Key]]) -> List[Tuple[
 
     # rows 4 to 5
     # result.extend(((4, k, Direction.RIGHT, Direction.BACK, 5, k, Direction.RIGHT, Direction.FRONT) for k in range(0, len(key_matrix[5]) - 1)))  # ESC to F12
+
+    return result
+
+
+# ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+def get_corner_loft_mapping(key_matrix: List[List[Key]]) -> List[Tuple[int, int, List[Tuple[cadquery.Vector, cadquery.Vector]], Direction]]:
+    result = list()  # type: List[Tuple[int, int, List[Tuple[cadquery.Vector, cadquery.Vector]], Direction]]
+    loft = list()  # type: List[Tuple[cadquery.Vector, cadquery.Vector]]
+
+    # space-bar connector
+    loft.append(key_matrix[0][3].slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK))  # SPC
+    loft.append(key_matrix[0][3].slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))  # SPC
+    loft.append(key_matrix[1][9].slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))  # ,
+    loft.append(key_matrix[1][3].slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT))  # x
+    result.append((1, 3, loft, Direction.FRONT))
+
+    # RCTL - RSFT connector
+    loft = list()  # type: List[Tuple[cadquery.Vector, cadquery.Vector]]
+    loft.append(key_matrix[0][6].slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK))  # SPC
+    loft.append(key_matrix[0][7].slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))  # SPC
+    loft.append(key_matrix[1][12].slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))  # RSFT
+    loft.append(key_matrix[1][12].slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT))  # RSFT
+    result.append((1, 12, loft, Direction.FRONT))
 
     return result

@@ -5,7 +5,6 @@ from src import model_importer
 _cliargs, config = model_importer.import_config()
 
 
-
 """
 Indexing and terms:
 
@@ -45,7 +44,7 @@ Construction strategy:
       - retrieving the computed cad object: get_cad_object()
 
 
-  Illustratoin of base plane, key and origin:
+  Illustration of base plane, key and origin:
 
     ⊙ ... origin
     * ... switch
@@ -250,8 +249,7 @@ class KeySwitchSlot(KeyBox, Computeable, CadObject):
         else:
             self._cad_object = cache.get("slot", str(diag1), str(diag2), str(do_fill))
 
-    def get_cad_corner_edge(self, direction_x: Direction, direction_y: Direction) -> cadquery.Workplane:
-
+    def get_cad_corner_edge(self, direction_x: Direction, direction_y: Direction) -> Tuple[cadquery.Vector, cadquery.Vector]:
         if direction_y is Direction.BACK:
             face = self.get_cad_object().faces(">Y")  # type: Optional[cadquery.Workplane]
         elif direction_y is Direction.FRONT:
@@ -260,11 +258,15 @@ class KeySwitchSlot(KeyBox, Computeable, CadObject):
             assert False
 
         if direction_x is Direction.LEFT:
-            return face.edges("<X").first()
+            edge = face.edges("<X")
         elif direction_x is Direction.RIGHT:
-            return face.edges(">X").first()
+            edge = face.edges(">X")
         else:
             assert False
+
+        bottom = edge.vertices("<Z").val().Center()  # type: cadquery.Vertex
+        top = edge.vertices(">Z").val().Center()  # type: cadquery.Vertex
+        return bottom, top
 
     def get_cad_corner_vertex(self, direction_x: Direction, direction_y: Direction, direction_z: Direction) -> cadquery.Vector:
         """

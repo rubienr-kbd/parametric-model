@@ -75,6 +75,9 @@ class CadObject(object):
         assert self.has_cad_object()
         return self._cad_object
 
+    def set_cad_object(self: Union[Computeable, "CadObject"], cad_object: cadquery.Workplane, *args, **kwargs) -> None:
+        self._cad_object = cad_object
+
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
