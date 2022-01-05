@@ -20,15 +20,20 @@ def compute(**kwargs) -> List[List[Key]]:
 
     # 1.
     key_matrix = build_key_matrix()
+
     # 3.
     compute_placement_and_cad_objects(key_matrix)
+
     # 4.
-    conn_map = get_key_connection_mapping(key_matrix)
-    KeyUtils.connect_keys(conn_map, key_matrix)
-    conn_map = get_connector_connection_mapping(key_matrix)
-    KeyUtils.connect_connectors(conn_map, key_matrix)
-    conn_map = get_corner_loft_mapping(key_matrix)
-    KeyUtils.connect_lofts(conn_map, key_matrix)
+    conn_map = get_key_face_connection_mapping(key_matrix)
+    KeyUtils.connect_keys_face(conn_map, key_matrix)
+
+    conn_map = get_connector_face_connection_mapping(key_matrix)
+    KeyUtils.connect_connectors_face(conn_map, key_matrix)
+
+    conn_map = get_key_corner_edge_connection_mapping(key_matrix)
+    KeyUtils.connect_key_corner_edges(conn_map, key_matrix)
+
     # n.
     kwargs.get('for_export', False)
     KeyUtils.remove_cad_objects(key_matrix, remove_non_solids=kwargs.get('for_export', False))

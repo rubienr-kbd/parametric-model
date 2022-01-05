@@ -1,3 +1,5 @@
+from cadquery import NearestToPointSelector
+
 from src.iso_keys.keys import *
 from src.cli_args import cli_args
 from src.keys.canonical_keys import Key100UnitSpacerConnected, Key100UnitSpacerFilled, Key125UnitSpacer
@@ -328,39 +330,42 @@ def compute_placement_and_cad_objects(key_matrix: List[List[Key]]) -> None:
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-def get_key_connection_mapping(key_matrix: List[List[Key]]) -> List[Tuple[int, int, Direction, int, int, Direction]]:
+def get_key_face_connection_mapping(key_matrix: List[List[Key]]) -> List[Tuple[int, int, Direction, int, int, Direction]]:
     """
-    Specifies which keys and which faces are to be connected.
+    Specifies which keys and which keys' face are to be connected.
     @param key_matrix: pool of keys with pre-computed placement and cad objects
     """
     result = list()  # type: List[Tuple[int, int, Direction, int, int, Direction]]
 
     # connections in between neighbours in same row
+    # ╭─────╮    ╭─────╮
+    # │     │ ←→ │     │
+    # ╰─────╯    ╰─────╯
     row_idx = 0
-    for row in key_matrix:
-        result.extend((row_idx, k - 1, Direction.RIGHT, row_idx, k, Direction.LEFT) for k in range(1, len(row)))
-        row_idx += 1
+    result.extend((row_idx, k - 1, Direction.RIGHT, row_idx, k, Direction.LEFT) for k in range(1, len(key_matrix[row_idx]) - 1))
+    row_idx = 1
+    result.extend((row_idx, k - 1, Direction.RIGHT, row_idx, k, Direction.LEFT) for k in range(1, len(key_matrix[row_idx]) - 1))
+    row_idx = 2
+    result.extend((row_idx, k - 1, Direction.RIGHT, row_idx, k, Direction.LEFT) for k in range(1, 14))
+    result.extend((row_idx, k - 1, Direction.RIGHT, row_idx, k, Direction.LEFT) for k in range(15, len(key_matrix[row_idx]) - 1))
+    row_idx = 3
+    result.extend((row_idx, k - 1, Direction.RIGHT, row_idx, k, Direction.LEFT) for k in range(1, 14))
+    result.extend((row_idx, k - 1, Direction.RIGHT, row_idx, k, Direction.LEFT) for k in range(15, len(key_matrix[row_idx])-1))
+    row_idx = 4
+    result.extend((row_idx, k - 1, Direction.RIGHT, row_idx, k, Direction.LEFT) for k in range(1, len(key_matrix[row_idx])))
+    row_idx = 5
+    result.extend((row_idx, k - 1, Direction.RIGHT, row_idx, k, Direction.LEFT) for k in range(1, len(key_matrix[row_idx])))
 
-    # connections in between adjacent rows 0 to 1
-    result.extend(((0, k, Direction.BACK, 1, k, Direction.FRONT) for k in range(0, 3)))  # LCTL to LALT
-    result.extend(((0, k, Direction.BACK, 1, k + 6, Direction.FRONT) for k in range(4, 7)))  # LALT to MENU
-    result.extend(((0, k, Direction.BACK, 1, k + 5, Direction.FRONT) for k in range(8, 12)))  # LARR to numpad INS
-    result.extend([(0, 12, Direction.BACK, 1, 12 + 6, Direction.FRONT)])  # numpad DEL
+    # connections in between keys in adjacent rows
+    #            ╭───────╮    ╭──────╮   ╭─────╮   ╭─────╮   ╭─────╮    ╭───────────╮
+    #            │       │    │      │   │     │   │     │   │     │    │           │
+    #            ╰───────╯    ╰──────╯   ╰─────╯   ╰─────╯   ╰─────╯    ╰───────────╯
+    #                ↕          ↕                                              ↕
+    #            ╭─────╮   ╭─────╮   ╭───────────────────────╮   ╭─────╮   ╭──────╮
+    #            │     │   │     │   │                       │   │     │   │      │
+    #            ╰─────╯   ╰─────╯   ╰───────────────────────╯   ╰─────╯   ╰──────╯
 
-    ## connections in between adjacent rows 1 to 2
-    result.extend(((1, k, Direction.BACK, 2, k, Direction.FRONT) for k in range(0, 13)))  # LSFT to RSFT
-    result.extend(((1, k - 1, Direction.BACK, 2, k, Direction.FRONT) for k in range(14, len(key_matrix[2]))))  # LARR spacer to numpad
 
-    ## connections in between adjacent rows 2 to 3
-    # result.extend(((2, k, Direction.BACK, 3, k, Direction.FRONT) for k in range(0, 13)))  # CSFT to #
-    # result.extend(((2, k, Direction.BACK, 3, k, Direction.FRONT) for k in range(14, len(key_matrix[2]))))  # spacer to numpad
-
-    ## connections in between adjacent rows 3 to 4
-    # result.extend(((3, k, Direction.BACK, 4, k, Direction.FRONT) for k in range(0, len(key_matrix[3]))))  # TAB to numpad
-
-    ## connections in between adjacent rows 4 to 5
-    # result.extend(((4, k, Direction.BACK, 5, k, Direction.FRONT) for k in range(0, len(key_matrix[5]))))  # ESC to F12
-    # result.extend([(4, len(key_matrix[5]), Direction.BACK, 5, len(key_matrix[5]) - 1, Direction.FRONT)])  # ESC to F12
 
     return result
 
@@ -368,57 +373,240 @@ def get_key_connection_mapping(key_matrix: List[List[Key]]) -> List[Tuple[int, i
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-def get_connector_connection_mapping(key_matrix: List[List[Key]]) -> List[Tuple[int, int, Direction, Direction, Direction, int, int, Direction, Direction, Direction]]:
+def get_connector_face_connection_mapping(key_matrix: List[List[Key]]) -> List[Tuple[int, int, Direction, Direction, Direction, int, int, Direction, Direction, Direction]]:
     """
-    Specifies which key-connectors from :func:`iso_matrix.get_key_connection_mapping` and which faces are to be connected.
+    Specifies which key-connectors' face are to be connected.
     @param key_matrix: pool of keys with pre-computed placement and cad objects
+
+     ╭─────╮   ╭─────╮
+     │     │   │     │
+     ╰─────╯   ╰─────╯
+             ↕
+     ╭─────╮   ╭─────╮
+     │     │   │     │
+     ╰─────╯   ╰─────╯
     """
     result = list()  # type: List[Tuple[int, int, Direction,  Direction, Direction, int, int, Direction,  Direction, Direction,]]
-
-    # rows 0 to 1
-    result.extend(((0, k, Direction.RIGHT, Direction.BACK, Direction.BACK_RIGHT, 1, k, Direction.RIGHT, Direction.FRONT, Direction.FRONT_RIGHT) for k in range(0, 3)))  # LCTL to LALT
-    result.extend(((0, k, Direction.RIGHT, Direction.BACK, Direction.BACK_RIGHT, 1, k + 6, Direction.RIGHT, Direction.FRONT, Direction.FRONT_RIGHT) for k in range(3, 6)))  # RALT to FN
-    result.extend(((0, k, Direction.RIGHT, Direction.BACK, Direction.BACK_RIGHT, 1, k + 5, Direction.RIGHT, Direction.FRONT, Direction.FRONT_RIGHT) for k in range(7, 11)))  # RCTL to numpad NINS
-    result.extend(((0, k, Direction.RIGHT, Direction.BACK, Direction.BACK_RIGHT, 1, k + 6, Direction.RIGHT, Direction.FRONT, Direction.FRONT_RIGHT) for k in range(11, 13)))  # numpad NDEL
-
-    # rows 1 to 2
-    result.extend(((1, k, Direction.RIGHT, Direction.BACK, Direction.BACK_RIGHT, 2, k, Direction.RIGHT, Direction.FRONT, Direction.FRONT_RIGHT) for k in range(0, 12)))  # LSFT to RSFT
-    result.extend(((1, k, Direction.RIGHT, Direction.BACK, Direction.BACK_RIGHT, 2, k + 1, Direction.RIGHT, Direction.FRONT, Direction.FRONT_RIGHT) for k in
-                   range(13, len(key_matrix[2]) - 1)))  # spacer to numpad
-
-    # rows 2 to 3
-    # result.extend(((2, k, Direction.RIGHT, Direction.BACK, 3, k, Direction.RIGHT, Direction.FRONT) for k in range(0, 12)))  # CSFT to #
-    # result.extend(((2, k, Direction.RIGHT, Direction.BACK, 3, k, Direction.RIGHT, Direction.FRONT) for k in range(13, len(key_matrix[2]) - 1)))  # spacer to numpad
-
-    # rows 3 to 4
-    # result.extend(((3, k, Direction.RIGHT, Direction.BACK, 4, k, Direction.RIGHT, Direction.FRONT) for k in range(0, len(key_matrix[3]) - 1)))  # TAB to numpad
-
-    # rows 4 to 5
-    # result.extend(((4, k, Direction.RIGHT, Direction.BACK, 5, k, Direction.RIGHT, Direction.FRONT) for k in range(0, len(key_matrix[5]) - 1)))  # ESC to F12
-
     return result
 
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-def get_corner_loft_mapping(key_matrix: List[List[Key]]) -> List[Tuple[int, int, List[Tuple[cadquery.Vector, cadquery.Vector]], Direction]]:
+def get_key_corner_edge_connection_mapping(key_matrix: List[List[Key]]) -> List[Tuple[int, int, List[Tuple[cadquery.Vector, cadquery.Vector]], Direction]]:
+    """
+    Example of one horizontal gap filler in between two rows with keys having different column span.
+              ╭───────╮    ╭──────╮   ╭─────╮   ╭─────╮   ╭─────╮    ╭───────────╮
+              │       │    │      │   │     │   │     │   │     │    │           │
+    edge  0  ↗╰───────╯↖  ↗╰──────╯↖ ↗╰─────╯↖ ↗╰─────╯↖ ↗╰─────╯↖  ↗╰───────────╯↖ edge 11
+    edge 21  ↘╭─────╮↙ ↘╭─────╮↙ ↘╭───────────────────────╮↙ ↘╭─────╮↙ ↘╭──────╮↙ edge 12
+              │     │   │     │   │                       │   │     │   │      │
+              ╰─────╯   ╰─────╯   ╰───────────────────────╯   ╰─────╯   ╰──────╯
+    """
     result = list()  # type: List[Tuple[int, int, List[Tuple[cadquery.Vector, cadquery.Vector]], Direction]]
+
+    # row 0 to 1
+
     loft = list()  # type: List[Tuple[cadquery.Vector, cadquery.Vector]]
 
-    # space-bar connector
-    loft.append(key_matrix[0][3].slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK))  # SPC
-    loft.append(key_matrix[0][3].slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))  # SPC
-    loft.append(key_matrix[1][9].slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))  # ,
-    loft.append(key_matrix[1][3].slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT))  # x
-    result.append((1, 3, loft, Direction.FRONT))
+    row_idx = 0
+    for key_idx in range(0, len(key_matrix[row_idx])):
+        key = key_matrix[row_idx][key_idx]
+        if key.base.is_visible:
+            loft.append(key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK))
+            loft.append(key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))
 
-    # RCTL - RSFT connector
+    row_idx = 1
+    for key_idx in range(len(key_matrix[row_idx]) - 1, 0, -1):
+        key = key_matrix[row_idx][key_idx - 1]
+        if key.base.is_visible:
+            loft.append(key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))
+            loft.append(key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT))
+
+    result.append((row_idx, 0, loft, Direction.FRONT))
+
+    # row 1 to 2
+
     loft = list()  # type: List[Tuple[cadquery.Vector, cadquery.Vector]]
-    loft.append(key_matrix[0][6].slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK))  # SPC
-    loft.append(key_matrix[0][7].slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))  # SPC
-    loft.append(key_matrix[1][12].slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))  # RSFT
-    loft.append(key_matrix[1][12].slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT))  # RSFT
-    result.append((1, 12, loft, Direction.FRONT))
+
+    row_idx = 1
+    for key_idx in range(0, len(key_matrix[row_idx])):
+        key = key_matrix[row_idx][key_idx]
+        if key.base.is_visible:
+            loft.append(key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK))
+            loft.append(key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))
+
+    row_idx = 2
+    for key_idx in range(len(key_matrix[row_idx]), 0, -1):
+        key = key_matrix[row_idx][key_idx - 1]
+        if key.base.is_visible or True:
+            loft.append(key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))
+            loft.append(key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT))
+
+    result.append((row_idx, 0, loft, Direction.FRONT))
+
+    # row 2 to 3
+
+    loft = list()  # type: List[Tuple[cadquery.Vector, cadquery.Vector]]
+
+    row_idx = 2
+    for key_idx in range(0, 13):
+        key = key_matrix[row_idx][key_idx]
+        if key.base.is_visible:
+            loft.append(key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK))
+            loft.append(key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))
+
+    row_idx = 3
+    for key_idx in range(13, 0, -1):
+        key = key_matrix[row_idx][key_idx - 1]
+        if key.base.is_visible:
+            loft.append(key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))
+            loft.append(key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT))
+
+    result.append((row_idx, 0, loft, Direction.FRONT))
+
+    loft = list()  # type: List[Tuple[cadquery.Vector, cadquery.Vector]]
+
+    row_idx = 2
+    for key_idx in range(14, 20):
+        key = key_matrix[row_idx][key_idx]
+        if key.base.is_visible:
+            loft.append(key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK))
+            loft.append(key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))
+
+    row_idx = 3
+    for key_idx in range(20, 14, -1):
+        key = key_matrix[row_idx][key_idx - 1]
+        if key.base.is_visible:
+            loft.append(key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))
+            loft.append(key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT))
+
+    result.append((row_idx, 14, loft, Direction.FRONT))
+
+    # row 3 to 4
+
+    loft = list()  # type: List[Tuple[cadquery.Vector, cadquery.Vector]]
+
+    row_idx = 3
+    for key_idx in range(0, len(key_matrix[row_idx])):
+        key = key_matrix[row_idx][key_idx]
+        if key.base.is_visible:
+            loft.append(key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK))
+            loft.append(key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))
+
+    row_idx = 4
+    for key_idx in range(len(key_matrix[row_idx]), 0, -1):
+        key = key_matrix[row_idx][key_idx - 1]
+        if key.base.is_visible:
+            loft.append(key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))
+            loft.append(key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT))
+
+    result.append((row_idx, 0, loft, Direction.FRONT))
+
+    # row 4 to 5
+
+    loft = list()  # type: List[Tuple[cadquery.Vector, cadquery.Vector]]
+
+    row_idx = 4
+    for key_idx in range(0, len(key_matrix[row_idx])):
+        key = key_matrix[row_idx][key_idx]
+        if key.base.is_visible:
+            loft.append(key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK))
+            loft.append(key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))
+
+    row_idx = 5
+    for key_idx in range(len(key_matrix[row_idx]), 0, -1):
+        key = key_matrix[row_idx][key_idx - 1]
+        if key.base.is_visible:
+            loft.append(key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))
+            loft.append(key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT))
+
+    result.append((row_idx, 0, loft, Direction.FRONT))
+
+    # manually connect leftovers
+
+    # iso enter - center-left wedge
+
+    def get_cad_corner_center_edge(cad_object: cadquery.Workplane, key_base: KeyBase, inner: bool = True) -> Tuple[cadquery.Vector, cadquery.Vector]:
+        face = cad_object.faces("|Y").faces("<X")
+        point = key_base.position if inner else (key_base.position[0] - key_base.width, key_base.position[1], key_base.position[2])
+        edge = face.edges("|Z").edges(NearestToPointSelector(point))
+
+        bottom = edge.vertices("<Z").val().Center()  # type: cadquery.Vertex
+        top = edge.vertices(">Z").val().Center()  # type: cadquery.Vertex
+        return bottom, top
+
+    loft = list()  # type: List[Tuple[cadquery.Vector, cadquery.Vector]]
+
+    enter_key = key_matrix[3][13]
+    left_key = key_matrix[3][12]
+    bottom_left_key = key_matrix[2][12]
+
+    loft.append(get_cad_corner_center_edge(enter_key.slot.get_cad_object(), key_base=enter_key.base, inner=False))
+    loft.append(get_cad_corner_center_edge(enter_key.slot.get_cad_object(), key_base=enter_key.base, inner=True))
+
+    e = bottom_left_key.connectors.right.get_cad_face(Direction.BACK).edges("|Z").edges(">X")
+    loft.append((e.vertices("<Z").val().Center(), e.vertices(">Z").val().Center()))
+
+    loft.append(bottom_left_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))
+    loft.append(left_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))
+
+    result.append((3, 12, loft, Direction.FRONT))
+
+    # iso enter - right connector
+
+    top_right_key = key_matrix[3][14]
+    bottom_right_key = key_matrix[2][14]
+
+    loft = list()
+
+    loft.append(enter_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))
+    loft.append(enter_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))
+
+    loft.append(top_right_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK))
+    loft.append(top_right_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT))
+
+    loft.append(bottom_right_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK))
+    loft.append(bottom_right_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT))
+
+    result.append((3, 13, loft, Direction.RIGHT))
+
+    # numpad +
+
+    numpad_plus_key = key_matrix[3][len(key_matrix[3]) - 1]
+    top_left_key = key_matrix[3][len(key_matrix[3]) - 2]
+    bottom_left_key = key_matrix[2][len(key_matrix[2]) - 2]
+
+    loft = list()  # type: List[Tuple[cadquery.Vector, cadquery.Vector]]
+
+    loft.append(top_left_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))
+    loft.append(top_left_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))
+
+    loft.append(bottom_left_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))
+    loft.append(bottom_left_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))
+
+    loft.append(numpad_plus_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT))
+    loft.append(numpad_plus_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK))
+
+    result.append((3, len(key_matrix[3]) - 2, loft, Direction.RIGHT))
+
+    # numpad enter
+
+    numpad_enter_key = key_matrix[1][len(key_matrix[1]) - 1]
+    top_left_key = key_matrix[1][len(key_matrix[1]) - 2]
+    bottom_left_key = key_matrix[0][len(key_matrix[0]) - 2]
+
+    loft = list()  # type: List[Tuple[cadquery.Vector, cadquery.Vector]]
+
+    loft.append(top_left_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))
+    loft.append(top_left_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))
+
+    loft.append(bottom_left_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))
+    loft.append(bottom_left_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))
+
+    loft.append(numpad_enter_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT))
+    loft.append(numpad_enter_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK))
+
+    result.append((1, len(key_matrix[1]) - 2, loft, Direction.RIGHT))
 
     return result

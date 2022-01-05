@@ -52,7 +52,7 @@ class KeyUtils(object):
         return cadquery.Workplane(cadquery.Solid.makeLoft([get_wire(first_face), get_wire(second_face)]))
 
     @staticmethod
-    def loft(bottom_top_points: List[Tuple[cadquery.Vector, cadquery.Vector]]) -> cadquery.Workplane:
+    def loft_along_edges(bottom_top_points: List[Tuple[cadquery.Vector, cadquery.Vector]]) -> cadquery.Workplane:
         bottom_top_tuples = [list(edge) for edge in list(zip(*bottom_top_points))]
         bottom_points = bottom_top_tuples[0]
         top_points = bottom_top_tuples[1]
@@ -60,10 +60,12 @@ class KeyUtils(object):
         edges_bottom = []
         for i in range(1, len(bottom_points)):
             edges_bottom.append(cadquery.Edge.makeLine(bottom_points[i - 1], bottom_points[i]))
+        edges_bottom.append(cadquery.Edge.makeLine(bottom_points[len(bottom_points) - 1], bottom_points[0]))
 
         edges_top = []
         for i in range(1, len(top_points)):
             edges_top.append(cadquery.Edge.makeLine(top_points[i - 1], top_points[i]))
+        edges_top.append(cadquery.Edge.makeLine(top_points[len(top_points) - 1], top_points[0]))
 
         loft = cadquery.Workplane(
             cadquery.Solid.makeLoft([cadquery.Wire.assembleEdges(edges_bottom),
@@ -91,7 +93,7 @@ class KeyUtils(object):
         return cadquery.Workplane(cadquery.Solid.makeLoft([first_wire, second_wire]))
 
     @staticmethod
-    def connect_keys(connection_info: List[Tuple[int, int, Direction, int, int, Direction]],
+    def connect_keys_face(connection_info: List[Tuple[int, int, Direction, int, int, Direction]],
                      key_matrix: List[List[Key]]) -> None:
         """
         Creates solids for gaps in between the keys as listed in the connection info.
@@ -116,7 +118,7 @@ class KeyUtils(object):
         print("\ncompute key to key connectors: done")
 
     @staticmethod
-    def connect_connectors(connection_info: List[Tuple[int, int, Direction, Direction, Direction, int, int, Direction, Direction, Direction]],
+    def connect_connectors_face(connection_info: List[Tuple[int, int, Direction, Direction, Direction, int, int, Direction, Direction, Direction]],
                            key_matrix: List[List[Key]]) -> None:
         print("compute connector gap filler ({}) ...".format(len(connection_info)))
         for a_row, a_idx, a_direction_x, a_direction_y, a_dest_connector, \
@@ -143,13 +145,13 @@ class KeyUtils(object):
         print("\ncompute connector gap filler: done")
 
     @staticmethod
-    def connect_lofts(connection_info: List[Tuple[int, int, List[Tuple[cadquery.Vector, cadquery.Vector]], Direction]],
+    def connect_key_corner_edges(connection_info: List[Tuple[int, int, List[Tuple[cadquery.Vector, cadquery.Vector]], Direction]],
                       key_matrix: List[List[Key]]) -> None:
         print("compute loft gap filler ({}) ...".format(len(connection_info)))
 
         for gap_filler in connection_info:
-            row, col, bottom_top_points, dest_direction = gap_filler
-            loft = KeyUtils.loft(bottom_top_points)
+            row, col, edges, dest_direction = gap_filler
+            loft = KeyUtils.loft_along_edges(edges)
             key = key_matrix[row][col]
             key.connectors.get_connector(dest_direction).set_cad_object(loft)
             key.expose_cad_objects()
