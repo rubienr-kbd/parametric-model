@@ -32,7 +32,7 @@ class DebugConfig(object):
 
         self.show_placement = False  # type: bool
         self.show_key_origin = False  # type: bool
-        self.show_key_name = False  # type: bool
+        self.show_key_name = True  # type: bool
         self.show_key_cap = False  # type: bool
         self.show_key_switch = False  # type: bool
 

@@ -8,8 +8,8 @@ from .iso_matrix import *
 def compute(**kwargs) -> List[List[Key]]:
     """
     strategy
-      1. assemble key matrix: define key size and style(iso, ansi, with or without numpad/arrows etc.)
-      2. optional: compute additional rotation/displacement if keyboard is not planar (not yet supported)
+      1. assemble key matrix: define key size and style (iso, ansi, with or without numpad/arrows etc.), position and rotation
+      2. optional: compute additional position and rotation offset if keyboard is not planar
       3. compute real key placement and cad objects
       4. connect keys (split keyboard: not yet supported)
       5. construct wall around keys (not yet supported)
@@ -21,6 +21,10 @@ def compute(**kwargs) -> List[List[Key]]:
     # 1.
     key_matrix = build_key_matrix()
 
+    # 2.
+    apply_translation_offset(key_matrix)
+    # aply_rotation_offset(key_matrix)
+
     # 3.
     compute_placement_and_cad_objects(key_matrix)
 
@@ -28,8 +32,8 @@ def compute(**kwargs) -> List[List[Key]]:
     conn_map = get_key_face_connection_mapping(key_matrix)
     KeyUtils.connect_keys_face(conn_map, key_matrix)
 
-    conn_map = get_connector_face_connection_mapping(key_matrix)
-    KeyUtils.connect_connectors_face(conn_map, key_matrix)
+    #conn_map = get_connector_face_connection_mapping(key_matrix)
+    #KeyUtils.connect_connectors_face(conn_map, key_matrix)
 
     conn_map = get_key_corner_edge_connection_mapping(key_matrix)
     KeyUtils.connect_key_corner_edges(conn_map, key_matrix)

@@ -342,10 +342,10 @@ class KeyConnectors(IterableObject):
         self.back = KeyConnector()
         self.left = KeyConnector()
         self.right = KeyConnector()
-        #self.back_left = KeyConnector()
-        #self.back_right = KeyConnector()
-        #self.front_left = KeyConnector()
-        #self.front_right = KeyConnector()
+        self.back_left = KeyConnector()
+        self.back_right = KeyConnector()
+        self.front_left = KeyConnector()
+        self.front_right = KeyConnector()
 
     def get_connector(self, direction: Direction) -> KeyConnector:
         if direction is Direction.LEFT:
@@ -356,6 +356,14 @@ class KeyConnectors(IterableObject):
             return self.front
         elif direction is Direction.BACK:
             return self.back
+        elif direction is Direction.BACK_LEFT:
+            return self.back_left
+        elif direction is Direction.BACK_RIGHT:
+            return self.back_right
+        elif direction is Direction.FRONT_LEFT:
+            return self.front_left
+        elif direction is Direction.FRONT_RIGHT:
+            return self.front_right
         else:
             assert False
 
@@ -383,7 +391,7 @@ class CadObjects(IterableObject):
         self.cap = None  # type: Optional[Shape]
         self.slot = None  # type: Optional[Shape]
         self.switch = None  # type: Optional[Shape]
-        self.connectors = list()  # type: List[Shape]
+        self.connectors = list()  # type: List[Tuple[str, Shape]]
 
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -431,6 +439,15 @@ class Key(Computeable, CadKeyMixin):
         self.cad_objects.switch = self.switch.get_cad_object() if self.switch.has_cad_object() else None
 
         self.cad_objects.connectors.clear()
-        to_expose = [self.connectors.front, self.connectors.right]
-        for connector in [connector for connector in to_expose if connector.has_cad_object()]:
-            self.cad_objects.connectors.append(connector.get_cad_object())
+        to_expose = [
+            ("conn-front", self.connectors.front),
+            ("conn-back", self.connectors.back),
+            ("conn-left", self.connectors.left),
+            ("conn-right", self.connectors.right),
+            ("conn-frnt-rgt", self.connectors.front_right),
+            ("conn-frnt-lft", self.connectors.front_left),
+            ("conn-back-rgt", self.connectors.back_right),
+            ("conn-back-lft", self.connectors.back_left)
+        ]
+        for name, connector in [ct for ct in to_expose if ct[1].has_cad_object()]:
+            self.cad_objects.connectors.append((name, connector.get_cad_object()))

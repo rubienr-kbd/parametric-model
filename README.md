@@ -11,19 +11,25 @@ Inspired by
 
 what works yet
 * planar key placement
-* key slots with undercut (for example Gateron switches)
+* non planar key placement (simple key translation is possible)
+* key slots with undercut (for Gateron switches)
 * naive gap filler in between keys
 * script can be loaded with cq-editor for debugging (provides a fast result; for development)
+* script can be run standalone
 * script can export to STEP file format (rather slow; the exported file can be loaded with FreeCAD for refinement)
+* multiple configs/layouts possible
 
 what doesn't work now
-* planar face is not filled completely
-* no walls, no baseplate, basically nothing except of the planar keys
-* multiple configs/layouts
+* key orientation (simple rotation to change direction the key dish shows)
+* key rotation (rotation around its own Z-axis; i.e. for additional thumb keys)
+* no walls
+* no baseplate 
+* basically nothing except of the planar slots for key switches
+
 
 what is the aim
-* highly configurable layout: ISO, ANSI, size (full, no numpad, no arrow keys)
-* split and non planar should be realize-able~~~~
+* configurable layout: ISO, ANSI, size (full, no numpad, no arrow keys)
+* split keyboard and non planar layouts should be realize-able
 
 what are non-aims
 * sophisticated key cap modelling (the key is a simple extruded base, tapered on top)
@@ -32,7 +38,8 @@ what are non-aims
 
 * active anaconda environment with 
   * [cadquery](https://cadquery.readthedocs.io/en/latest/installation.html) installed (`conda install -c cadquery -c conda-forge cadquery=master`) and 
-  * python interpreter pointing to the anaconda installation and 
+  * python interpreter pointing to the anaconda installation,
+  * [cqmore](https://awesomeopensource.com/project/JustinSDK/cqMore) installed (`pip install git+git://github.com/JustinSDK/cqMore.git`) and 
   * optionally: 
     * [cadquery editor](https://github.com/CadQuery/CQ-editor) installed (`conda install -c cadquery -c conda-forge cq-editor=master`)
     * pycharm (add `~/miniconda3/bin/python` Python interpreter).
@@ -57,6 +64,14 @@ what are non-aims
 See: [./src/config.py](./src/config.py)
 
 ## Screenshots
+view in cq-editor
+<br/>
 <img src="./resources/cq-editor-example-01.png" width="30%" />
 <br/>
+STEP file in FreeCad
+<br/>
 <img src="./resources/freecad-example-01.png" width="30%" />
+<br/>
+non planar key example
+<br/>
+<img src="./resources/freecad-example-02.png" width="30%" />

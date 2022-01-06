@@ -1,5 +1,5 @@
 from .key import *
-
+import cqmore
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -73,43 +73,76 @@ class KeyUtils(object):
         return loft
 
     @staticmethod
-    def key_connector(first_key: Key,
-                      second_key: Key,
-                      first_direction: Direction,
-                      second_direction: Direction) -> cadquery.Workplane:
+    def polyhedron_along_edges(bottom_top_points: List[Tuple[cadquery.Vector, cadquery.Vector]]) -> cqmore.Workplane:
+        points = list()
+        for edge in bottom_top_points:
+            points.append(edge[0])
+            points.append(edge[1])
+        return cqmore.Workplane().polyhedron(*cqmore.polyhedron.hull(points))
+
+    @staticmethod
+    def key_face_connector(first_key: Key,
+                           second_key: Key,
+                           first_direction: Direction,
+                           second_direction: Direction,
+                           polyhedron_mode: bool) -> Union[cadquery.Workplane, cqmore.Workplane]:
         """
         Returns a loft/gap filler in between two key faces as specified the direction.
         @param first_key: the key to loft from
         @param second_key: the key to loft to
         @param first_direction: the face to loft from
         @param second_direction: the face to loft to
+        @param polyhedron_mode: polyhedron mode if True else loft mode
         """
 
-        def get_wire(face):
-            return face.first().wires().val()
+        if polyhedron_mode:
+            def get_vertices(face_a : cadquery.Face, face_b : cadquery.Face) -> List[cadquery.Vector]:
+                vs_a = face_a.vertices().vals()
+                vs_b = face_b.vertices().vals()
+                result = list()
+                result.extend([v.Center() for v in vs_a])
+                result.extend([v.Center() for v in vs_b])
+                return result
 
-        first_wire = get_wire(first_key.slot.get_cad_face(first_direction))
-        second_wire = get_wire(second_key.slot.get_cad_face(second_direction))
-        return cadquery.Workplane(cadquery.Solid.makeLoft([first_wire, second_wire]))
+            points = get_vertices(first_key.slot.get_cad_face(first_direction), second_key.slot.get_cad_face(second_direction))
+            return cqmore.Workplane().polyhedron(*cqmore.polyhedron.hull(points))
+        else:
+            def get_wire(face):
+                return face.first().wires().val()
+            first_wire = get_wire(first_key.slot.get_cad_face(first_direction))
+            second_wire = get_wire(second_key.slot.get_cad_face(second_direction))
+            return cadquery.Workplane(cadquery.Solid.makeLoft([first_wire, second_wire]))
 
     @staticmethod
-    def connect_keys_face(connection_info: List[Tuple[int, int, Direction, int, int, Direction]],
+    def connect_keys_face(connection_info: List[Tuple[int, int, Direction, int, int, Direction, bool]],
                      key_matrix: List[List[Key]]) -> None:
         """
-        Creates solids for gaps in between the keys as listed in the connection info.
+        Creates horizontal or vertical gap filler in between the keys as listed in the connection info.
+
+        a ... horizontal filler
+        b ... vertical filler
+
+        ╭─────╮     ╭─────╮
+        │     │ ←a→ │     │
+        ╰─────╯     ╰─────╯
+           ↕ b       b ↕
+        ╭─────╮     ╭─────╮
+        │     │ ←a→ │     │
+        ╰─────╯     ╰─────╯
+
         @param connection_info: information which keys to connect and which faces to use
         @param key_matrix: pool of keys with pre-computed placement and cad objects
         """
         print("compute key to key connectors ({}) ...".format(len(connection_info)))
 
-        for a_row, a_idx, a_direction_x, b_row, b_col, b_direction_x in connection_info:
+        for a_row, a_idx, a_direction_x, b_row, b_col, b_direction_x, polyhedron_mode in connection_info:
             a = key_matrix[a_row][a_idx]
             b = key_matrix[b_row][b_col]
             if a.slot.has_cad_object() and b.slot.has_cad_object():
                 print(".", end="")
-                loft = KeyUtils.key_connector(a, b, a_direction_x, b_direction_x)
-                a.connectors.get_connector(a_direction_x).set_cad_object(loft)
-                b.connectors.get_connector(b_direction_x).set_cad_object(loft)
+                gap_filler = KeyUtils.key_face_connector(a, b, a_direction_x, b_direction_x, polyhedron_mode)
+                a.connectors.get_connector(a_direction_x).set_cad_object(gap_filler)
+                # b.connectors.get_connector(b_direction_x).set_cad_object(gap_filler)
 
                 a.expose_cad_objects()
                 b.expose_cad_objects()
@@ -117,43 +150,47 @@ class KeyUtils(object):
                 print("x", end="")
         print("\ncompute key to key connectors: done")
 
+    # @staticmethod
+    # def connect_connectors_face(connection_info: List[Tuple[int, int, Direction, Direction, Direction, int, int, Direction, Direction, Direction]],
+    #                        key_matrix: List[List[Key]]) -> None:
+    #     print("compute connector gap filler ({}) ...".format(len(connection_info)))
+    #     for a_row, a_idx, a_direction_x, a_direction_y, a_dest_connector, \
+    #         b_row, b_idx, b_direction_x, b_direction_y, b_dest_connector in connection_info:
+    #         a = key_matrix[a_row][a_idx]
+    #         b = key_matrix[b_row][b_idx]
+
+    #         a_connector = a.connectors.get_connector(a_direction_x)
+    #         b_connector = b.connectors.get_connector(b_direction_x)
+    #         if a_connector.has_cad_object() and b_connector.has_cad_object():
+    #             print(".", end="")
+    #             a_connector = a.connectors.get_connector(a_direction_x)
+    #             b_connector = b.connectors.get_connector(b_direction_x)
+    #             loft = KeyUtils.connector(
+    #                 a_connector.get_cad_face(a_direction_y),
+    #                 b_connector.get_cad_face(b_direction_y))
+    #             a.connectors.get_connector(a_dest_connector).set_cad_object(loft)
+    #             b.connectors.get_connector(b_dest_connector).set_cad_object(loft)
+
+    #             a.expose_cad_objects()
+    #             b.expose_cad_objects()
+    #         else:
+    #             print("x", end="")
+    #     print("\ncompute connector gap filler: done")
+
     @staticmethod
-    def connect_connectors_face(connection_info: List[Tuple[int, int, Direction, Direction, Direction, int, int, Direction, Direction, Direction]],
-                           key_matrix: List[List[Key]]) -> None:
-        print("compute connector gap filler ({}) ...".format(len(connection_info)))
-        for a_row, a_idx, a_direction_x, a_direction_y, a_dest_connector, \
-            b_row, b_col, b_direction_x, b_direction_y, b_dest_connector in connection_info:
-            a = key_matrix[a_row][a_idx]
-            b = key_matrix[b_row][b_col]
-
-            a_connector = a.connectors.get_connector(a_direction_x)
-            b_connector = b.connectors.get_connector(b_direction_x)
-            if a_connector.has_cad_object() and b_connector.has_cad_object():
-                print(".", end="")
-                a_connector = a.connectors.get_connector(a_direction_x)
-                b_connector = b.connectors.get_connector(b_direction_x)
-                loft = KeyUtils.connector(
-                    a_connector.get_cad_face(a_direction_y),
-                    b_connector.get_cad_face(b_direction_y))
-                a.connectors.get_connector(a_dest_connector).set_cad_object(loft)
-                b.connectors.get_connector(b_dest_connector).set_cad_object(loft)
-
-                a.expose_cad_objects()
-                b.expose_cad_objects()
-            else:
-                print("x", end="")
-        print("\ncompute connector gap filler: done")
-
-    @staticmethod
-    def connect_key_corner_edges(connection_info: List[Tuple[int, int, List[Tuple[cadquery.Vector, cadquery.Vector]], Direction]],
-                      key_matrix: List[List[Key]]) -> None:
-        print("compute loft gap filler ({}) ...".format(len(connection_info)))
+    def connect_key_corner_edges(connection_info: List[Tuple[int, int, List[Tuple[cadquery.Vector, cadquery.Vector]], Direction, bool]], key_matrix: List[List[Key]]) -> None:
+        """
+        Note: Use default (loft) filling method whenever possible; use polyhedron filling method only if loft is not possible.
+        Complex polyhedrons most likely will not result in a nice tesselation.
+        Lofts cannot be uses if keys have a rotation/displacement w.r.t. to the normal planar distribution.
+        """
+        print("compute corner-edge gap filler ({}) ...".format(len(connection_info)))
 
         for gap_filler in connection_info:
-            row, col, edges, dest_direction = gap_filler
-            loft = KeyUtils.loft_along_edges(edges)
+            row, col, edges, dest_direction, polyhedron_mode = gap_filler
+            gap_filler = KeyUtils.loft_along_edges(edges) if not polyhedron_mode else KeyUtils.polyhedron_along_edges(edges)
             key = key_matrix[row][col]
-            key.connectors.get_connector(dest_direction).set_cad_object(loft)
+            key.connectors.get_connector(dest_direction).set_cad_object(gap_filler)
             key.expose_cad_objects()
 
         print("\ncompute loft gap filler: done")
@@ -170,7 +207,7 @@ class KeyUtils(object):
         for row in key_matrix:
             print("row {}".format(row_idx))
             for key in row:
-                print("  {:7}: ".format(key.name), end=" ")
+                print("  {:7}:".format(key.name), end=" ")
                 if not DEBUG.render_placement or remove_non_solids:
                     key.cad_objects.plane = None
                     print("placement", end=" ")
@@ -216,6 +253,7 @@ class KeyUtils(object):
                 color = cadquery.Color(0, 0, 1, 0.5) if key.base.is_visible else cadquery.Color(1, 1, 1, 0.125)
                 print("  {:7}:".format(key.name), end=" ")
                 if not key.base.is_visible and not DEBUG.show_invisibles:
+                    print("")
                     continue
 
                 # key components
@@ -229,12 +267,13 @@ class KeyUtils(object):
                         assembly = assembly.add(cad_object, color=color)
 
                 # connectors
-                for connector in key.cad_objects.connectors:
-                    print("connector", end=" ")
+                for name, connector in key.cad_objects.connectors:
+                    print("{}".format(name), end=" ")
                     if do_unify:
                         union = union.union(connector, clean=do_clean_union)
                     else:
                         assembly = assembly.add(connector, color=color)
+
                 print("")
             row_idx += 1
         print("final assembly ({}): done".format("union" if do_unify else "assembly"))
