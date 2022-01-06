@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Union, List, Tuple
 from enum import Enum
 import cadquery
+
 if TYPE_CHECKING:
     from .key import Key
 from src.cfg.debug import DEBUG
@@ -202,3 +203,25 @@ class CadKeyMixin(object):
         self.post_compute_cad_slot()
         if self.switch.has_cad_object():
             self.post_compute_cad_switch()
+
+
+# ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+class DactylAttributesMixin(object):
+
+    def set_is_left_hand(self: "Key") -> Union["Key", DactylAttributesMixin]:
+        self.dactyl.is_left_hand = True
+        return self
+
+    def set_is_right_hand(self: "Key") -> Union["Key", DactylAttributesMixin]:
+        self.dactyl.is_left_hand = False
+        return self
+
+    def set_is_arrow_block(self: "Key", is_arrow_block=True) -> Union["Key", DactylAttributesMixin]:
+        self.dactyl.is_arrow_block = is_arrow_block
+        return self
+
+    def set_is_numpad_block(self: "Key", is_numpad_block=True) -> Union["Key", DactylAttributesMixin]:
+        self.dactyl.is_numpad_block = is_numpad_block
+        return self

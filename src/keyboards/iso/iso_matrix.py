@@ -18,30 +18,30 @@ def build_key_row_0(size: KeyboardSize) -> List[Key]:
     space bar row
     """
     r = [
-        LeftCtrlKey(),
-        LeftOsKey(),
-        LeftAltKey(),
-        SpaceKey(),
-        RightAltKey(),
-        FnKey(),
-        RightMenulKey(),
-        RightCtrlKey()]
+        LeftCtrlKey().set_is_left_hand(),
+        LeftOsKey().set_is_left_hand(),
+        LeftAltKey().set_is_left_hand(),
+        SpaceKey().set_is_left_hand(),
+        RightAltKey().set_is_right_hand(),
+        FnKey().set_is_right_hand(),
+        RightMenulKey().set_is_right_hand(),
+        RightCtrlKey().set_is_right_hand()]
 
     assert size not in [KeyboardSize.S40, KeyboardSize.S60, KeyboardSize.S65, KeyboardSize.S75]
 
     if size.value >= KeyboardSize.S80.value:
         # arrow key group
         r.extend([
-            ArrowLeftKey(),
-            ArrowDownKey(),
-            ArrowRightKey()])
+            ArrowLeftKey().set_is_arrow_block().set_is_right_hand(),
+            ArrowDownKey().set_is_arrow_block().set_is_right_hand(),
+            ArrowRightKey().set_is_arrow_block().set_is_right_hand()])
 
     if size.value >= KeyboardSize.S100.value:
         # numpad
         r.extend([
-            IsoNumpadInsKey(),
-            NumpadDeleteKey(),
-            Key100UnitSpacerConnected()])
+            IsoNumpadInsKey().set_is_numpad_block().set_is_right_hand(),
+            NumpadDeleteKey().set_is_numpad_block().set_is_right_hand(),
+            Key100UnitSpacerConnected().set_is_numpad_block().set_is_right_hand()])
 
     return r
 
@@ -53,36 +53,36 @@ def build_key_row_1(size: KeyboardSize) -> List[Key]:
     """
     zxcv row
     """
-    r = [LeftShiftKey(),
-         CharacterKey("|"),
-         CharacterKey("y"),
-         CharacterKey("x"),
-         CharacterKey("c"),
-         CharacterKey("v"),
-         CharacterKey("b"),
-         CharacterKey("n"),
-         CharacterKey("m"),
-         CharacterKey(","),
-         CharacterKey("."),
-         CharacterKey("-"),
-         RightShiftKey()]
+    r = [LeftShiftKey().set_is_left_hand(),
+         CharacterKey("|").set_is_left_hand(),
+         CharacterKey("y").set_is_left_hand(),
+         CharacterKey("x").set_is_left_hand(),
+         CharacterKey("c").set_is_left_hand(),
+         CharacterKey("v").set_is_left_hand(),
+         CharacterKey("b").set_is_left_hand(),
+         CharacterKey("n").set_is_right_hand(),
+         CharacterKey("m").set_is_right_hand(),
+         CharacterKey(",").set_is_right_hand(),
+         CharacterKey(".").set_is_right_hand(),
+         CharacterKey("-").set_is_right_hand(),
+         RightShiftKey().set_is_right_hand()]
 
     assert size not in [KeyboardSize.S40, KeyboardSize.S60, KeyboardSize.S65, KeyboardSize.S75]
 
     if size.value >= KeyboardSize.S80.value:
         # arrow key
         r.extend([
-            Key100UnitUpArrowSpacer(),
-            ArrowUpKey(),
-            Key100UnitSpacerFilled()])
+            Key100UnitUpArrowSpacer().set_is_arrow_block().set_is_right_hand(),
+            ArrowUpKey().set_is_arrow_block().set_is_right_hand(),
+            Key100UnitSpacerFilled().set_is_arrow_block().set_is_right_hand()])
 
     if size.value >= KeyboardSize.S100.value:
         # numpad
         r.extend([
-            Key100UnitNumpadSpacer(),
-            CharacterKey("2"),
-            CharacterKey("3"),
-            IsoNumpadEnterKey()])
+            Key100UnitNumpadSpacer().set_is_numpad_block().set_is_right_hand(),
+            CharacterKey("2").set_is_numpad_block().set_is_right_hand(),
+            CharacterKey("3").set_is_numpad_block().set_is_right_hand(),
+            IsoNumpadEnterKey().set_is_numpad_block().set_is_right_hand()])
 
     return r
 
@@ -96,37 +96,37 @@ def build_key_row_2(size: KeyboardSize) -> List[Key]:
     """
     left_connected_spacer = Key125UnitSpacer()
     left_connected_spacer.base.is_connected_left = True
-    r = [CapsLockKey(),
-         CharacterKey("a"),
-         CharacterKey("s"),
-         CharacterKey("d"),
-         CharacterKey("f"),
-         CharacterKey("g"),
-         CharacterKey("h"),
-         CharacterKey("j"),
-         CharacterKey("k"),
-         CharacterKey("l"),
-         CharacterKey("ö"),
-         CharacterKey("ä"),
-         CharacterKey("#"),
-         left_connected_spacer]
+    r = [CapsLockKey().set_is_left_hand(),
+         CharacterKey("a").set_is_left_hand(),
+         CharacterKey("s").set_is_left_hand(),
+         CharacterKey("d").set_is_left_hand(),
+         CharacterKey("f").set_is_left_hand(),
+         CharacterKey("g").set_is_left_hand(),
+         CharacterKey("h").set_is_right_hand(),
+         CharacterKey("j").set_is_right_hand(),
+         CharacterKey("k").set_is_right_hand(),
+         CharacterKey("l").set_is_right_hand(),
+         CharacterKey("ö").set_is_right_hand(),
+         CharacterKey("ä").set_is_right_hand(),
+         CharacterKey("#").set_is_right_hand(),
+         left_connected_spacer.set_is_right_hand()]
 
     assert size not in [KeyboardSize.S40, KeyboardSize.S60, KeyboardSize.S65, KeyboardSize.S75]
 
     if size.value >= KeyboardSize.S80.value:
         # empty
         r.extend([
-            Key100UnitUpArrowSpacer(),
-            Key100UnitSpacerFilled(),
-            Key100UnitSpacerFilled()])
+            Key100UnitUpArrowSpacer().set_is_arrow_block().set_is_right_hand(),
+            Key100UnitSpacerFilled().set_is_arrow_block().set_is_right_hand(),
+            Key100UnitSpacerFilled().set_is_arrow_block().set_is_right_hand()])
 
     if size.value >= KeyboardSize.S100.value:
         # numpad
         r.extend([
-            Key100UnitNumpadSpacer(),
-            CharacterKey("5"),
-            CharacterKey("6"),
-            Key100UnitSpacerConnected()])
+            Key100UnitNumpadSpacer().set_is_numpad_block().set_is_right_hand(),
+            CharacterKey("5").set_is_numpad_block().set_is_right_hand(),
+            CharacterKey("6").set_is_numpad_block().set_is_right_hand(),
+            Key100UnitSpacerConnected().set_is_numpad_block().set_is_right_hand()])
 
     return r
 
@@ -138,37 +138,37 @@ def build_key_row_3(size: KeyboardSize) -> List[Key]:
     """
     qwer row
     """
-    r = [TabKey(),
-         CharacterKey("q"),
-         CharacterKey("w"),
-         CharacterKey("e"),
-         CharacterKey("r"),
-         CharacterKey("t"),
-         CharacterKey("z"),
-         CharacterKey("u"),
-         CharacterKey("i"),
-         CharacterKey("o"),
-         CharacterKey("p"),
-         CharacterKey("ü"),
-         CharacterKey("+"),
-         IsoEnterKey()]
+    r = [TabKey().set_is_left_hand(),
+         CharacterKey("q").set_is_left_hand(),
+         CharacterKey("w").set_is_left_hand(),
+         CharacterKey("e").set_is_left_hand(),
+         CharacterKey("r").set_is_left_hand(),
+         CharacterKey("t").set_is_left_hand(),
+         CharacterKey("z").set_is_right_hand(),
+         CharacterKey("u").set_is_right_hand(),
+         CharacterKey("i").set_is_right_hand(),
+         CharacterKey("o").set_is_right_hand(),
+         CharacterKey("p").set_is_right_hand(),
+         CharacterKey("ü").set_is_right_hand(),
+         CharacterKey("+").set_is_right_hand(),
+         IsoEnterKey().set_is_right_hand()]
 
     assert size not in [KeyboardSize.S40, KeyboardSize.S60, KeyboardSize.S65, KeyboardSize.S75]
 
     if size.value >= KeyboardSize.S80.value:
         # ins/del 6-key block
         r.extend([
-            DeleteKey(),
-            EndKey(),
-            PageDown()])
+            DeleteKey().set_is_arrow_block().set_is_right_hand(),
+            EndKey().set_is_arrow_block().set_is_right_hand(),
+            PageDown().set_is_arrow_block().set_is_right_hand()])
 
     if size.value >= KeyboardSize.S100.value:
         # numpad
         r.extend([
-            Key100UnitNumpadSpacer(),
-            CharacterKey("8"),
-            CharacterKey("9"),
-            IsoNumpadPlusKey()])
+            Key100UnitNumpadSpacer().set_is_numpad_block().set_is_right_hand(),
+            CharacterKey("8").set_is_numpad_block().set_is_right_hand(),
+            CharacterKey("9").set_is_numpad_block().set_is_right_hand(),
+            IsoNumpadPlusKey().set_is_numpad_block().set_is_right_hand()])
 
     return r
 
@@ -179,37 +179,37 @@ def build_key_row_4(size: KeyboardSize) -> List[Key]:
     """
     number row
     """
-    r = [CharacterKey("^"),
-         CharacterKey("1"),
-         CharacterKey("2"),
-         CharacterKey("3"),
-         CharacterKey("4"),
-         CharacterKey("5"),
-         CharacterKey("6"),
-         CharacterKey("7"),
-         CharacterKey("8"),
-         CharacterKey("9"),
-         CharacterKey("0"),
-         CharacterKey("ß"),
-         CharacterKey("´"),
-         BackspaceKey()]
+    r = [CharacterKey("^").set_is_left_hand(),
+         CharacterKey("1").set_is_left_hand(),
+         CharacterKey("2").set_is_left_hand(),
+         CharacterKey("3").set_is_left_hand(),
+         CharacterKey("4").set_is_left_hand(),
+         CharacterKey("5").set_is_left_hand(),
+         CharacterKey("6").set_is_right_hand(),
+         CharacterKey("7").set_is_right_hand(),
+         CharacterKey("8").set_is_right_hand(),
+         CharacterKey("9").set_is_right_hand(),
+         CharacterKey("0").set_is_right_hand(),
+         CharacterKey("ß").set_is_right_hand(),
+         CharacterKey("´").set_is_right_hand(),
+         BackspaceKey().set_is_right_hand()]
 
     assert size not in [KeyboardSize.S40, KeyboardSize.S60, KeyboardSize.S65, KeyboardSize.S75]
 
     if size.value >= KeyboardSize.S80.value:
         # ins/del 6-key block
         r.extend([
-            InsertKey(),
-            HomeKey(),
-            PageUpKey()])
+            InsertKey().set_is_arrow_block().set_is_right_hand(),
+            HomeKey().set_is_arrow_block().set_is_right_hand(),
+            PageUpKey().set_is_arrow_block().set_is_right_hand()])
 
     if size.value >= KeyboardSize.S100.value:
         # numpad
         r.extend([
-            Key100UnitNumpadSpacer(),
-            CharacterKey("/"),
-            CharacterKey("*"),
-            CharacterKey("-")])
+            Key100UnitNumpadSpacer().set_is_numpad_block().set_is_right_hand(),
+            CharacterKey("/").set_is_numpad_block().set_is_right_hand(),
+            CharacterKey("*").set_is_numpad_block().set_is_right_hand(),
+            CharacterKey("-").set_is_numpad_block().set_is_right_hand()])
 
     return r
 
@@ -218,19 +218,19 @@ def build_key_row_5(size: KeyboardSize) -> List[Key]:
     """
     F row
     """
-    r = [EscapeKey(),
-         F1Key(),
+    r = [EscapeKey().set_is_left_hand(),
+         F1Key().set_is_left_hand(),
          CharacterKey("F2"),
          CharacterKey("F3"),
-         F4Key(),
-         F5Key(),
-         CharacterKey("F6"),
-         CharacterKey("F7"),
-         F8Key(),
-         F9Key(),
-         CharacterKey("F10"),
-         CharacterKey("F11"),
-         F12Key()
+         F4Key().set_is_left_hand(),
+         F5Key().set_is_right_hand(),
+         CharacterKey("F6").set_is_right_hand(),
+         CharacterKey("F7").set_is_right_hand(),
+         F8Key().set_is_right_hand(),
+         F9Key().set_is_right_hand(),
+         CharacterKey("F10").set_is_right_hand(),
+         CharacterKey("F11").set_is_right_hand(),
+         F12Key().set_is_right_hand()
          ]
 
     assert size not in [KeyboardSize.S40, KeyboardSize.S60, KeyboardSize.S65, KeyboardSize.S75]
@@ -238,17 +238,17 @@ def build_key_row_5(size: KeyboardSize) -> List[Key]:
     if size.value >= KeyboardSize.S40.value:
         # print, scroll lock, pause
         r.extend([
-            PrintKey(),
-            ScrollLockKey(),
-            PauseKey()])
+            PrintKey().set_is_arrow_block().set_is_right_hand(),
+            ScrollLockKey().set_is_arrow_block().set_is_right_hand(),
+            PauseKey().set_is_arrow_block().set_is_right_hand()])
 
     if size.value >= KeyboardSize.S100.value:
         # numpad
         r.extend([
-            Key100UnitNumpadSpacerFilled(),
-            Key100UnitSpacerFilled(),
-            Key100UnitSpacerFilled(),
-            Key100UnitSpacerFilled()])
+            Key100UnitNumpadSpacerFilled().set_is_numpad_block().set_is_right_hand(),
+            Key100UnitSpacerFilled().set_is_numpad_block().set_is_right_hand(),
+            Key100UnitSpacerFilled().set_is_numpad_block().set_is_right_hand(),
+            Key100UnitSpacerFilled().set_is_numpad_block().set_is_right_hand()])
 
     return r
 
@@ -309,8 +309,8 @@ def compute_placement_and_cad_objects(key_matrix: List[List[Key]]) -> None:
     row_idx = 0
     for row in key_matrix:
         print("row {}".format(row_idx))
-        print("  col│position x   position y   position z  │rotation x   rotation y   rotation z  |key   unit│clrto clrri clrbo clrle│capwi  capde capth│vis")
-        print("  ───┼──────────────────────────────────────┼──────────────────────────────────────┼──────────┼───────────────────────┼──────────────────┼───")
+        print("  col│position x   position y   position z  │rotation x   rotation y   rotation z  |key   unit│clrto clrri clrbo clrle│capwi  capde capth│vis|dactyl")
+        print("  ───┼──────────────────────────────────────┼──────────────────────────────────────┼──────────┼───────────────────────┼──────────────────┼───┼──────")
         is_first_key_in_row = True
         col_idx = 0
 
@@ -338,6 +338,7 @@ def compute_placement_and_cad_objects(key_matrix: List[List[Key]]) -> None:
                   "│{clrto:5.2f} {clrri:5.2f} {clrbo:5.2f} {clrle:5.2f}"
                   "│{capwi:6.2f} {capde:5.2f} {capth:5.2f}"
                   "│{vis}"
+                  "|{dactyl}"
                   .format(col=col_idx,
                           x=key.base.position[0], y=key.base.position[1], z=key.base.position[2],
                           x_off=key.base.position_offset[0], y_off=key.base.position_offset[1], z_off=key.base.position_offset[2],
@@ -352,7 +353,11 @@ def compute_placement_and_cad_objects(key_matrix: List[List[Key]]) -> None:
                           capwi=key.cap.width,
                           capde=key.cap.depth,
                           capth=key.cap.thickness,
-                          vis="yes" if key.base.is_visible else "no "))
+                          vis="yes" if key.base.is_visible else "no ",
+                          dactyl=""
+                                 + ("r" if key.dactyl.is_right_hand else "l")
+                                 + ("a" if key.dactyl.is_arrow_block else " ")
+                                 + ("n" if key.dactyl.is_numpad_block else " ")))
 
             col_idx = col_idx + 1
         last_row = row
@@ -464,54 +469,6 @@ def get_key_face_connection_mapping(key_matrix: List[List[Key]]) -> List[Tuple[i
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-
-# def get_connector_face_connection_mapping(key_matrix: List[List[Key]]) -> List[Tuple[int, int, Direction, Direction, Direction, int, int, Direction, Direction, Direction]]:
-#    """
-#    Specifies which key-connectors' face are to be connected.
-#    @param key_matrix: pool of keys with pre-computed placement and cad objects
-#
-#     ╭─────╮   ╭─────╮
-#     │     │   │     │
-#     ╰─────╯   ╰─────╯
-#             ↕
-#     ╭─────╮   ╭─────╮
-#     │     │   │     │
-#     ╰─────╯   ╰─────╯
-#     TODO: connector faces wich are parallel to Y cannot be selected by |Y if translated in Z direction (assume bug).
-#        Do not use this method for not-planar keyboards.
-#    """
-#    result = list()  # type: List[Tuple[int, int, Direction,  Direction, Direction, int, int, Direction,  Direction, Direction,]]
-#    return result
-#    # rows 0 to 1
-#    result.extend(((0, k, Direction.RIGHT, Direction.BACK, Direction.BACK_RIGHT, 1, k, Direction.RIGHT, Direction.FRONT, Direction.FRONT_RIGHT) for k in range(0, 3)))  # LCTL to LALT
-#    result.extend(((0, k, Direction.RIGHT, Direction.BACK, Direction.BACK_RIGHT, 1, k + 6, Direction.RIGHT, Direction.FRONT, Direction.FRONT_RIGHT) for k in range(3, 6)))  # RALT to FN
-#    result.extend(((0, k, Direction.RIGHT, Direction.BACK, Direction.BACK_RIGHT, 1, k + 5, Direction.RIGHT, Direction.FRONT, Direction.FRONT_RIGHT) for k in range(7, 11)))  # RCTL to numpad NINS
-#    result.extend(((0, k, Direction.RIGHT, Direction.BACK, Direction.BACK_RIGHT, 1, k + 6, Direction.RIGHT, Direction.FRONT, Direction.FRONT_RIGHT) for k in range(11, 13)))  # numpad NDEL
-#
-#    # rows 1 to 2
-#    result.extend(((1, k, Direction.RIGHT, Direction.BACK, Direction.BACK_RIGHT, 2, k, Direction.RIGHT, Direction.FRONT, Direction.FRONT_RIGHT) for k in range(0, 12)))  # LSFT to RSFT
-#    result.extend(((1, k, Direction.RIGHT, Direction.BACK, Direction.BACK_RIGHT, 2, k + 1, Direction.RIGHT, Direction.FRONT, Direction.FRONT_RIGHT) for k in
-#                   range(13, len(key_matrix[2]) - 1)))  # spacer to numpad
-#
-#    # rows 2 to 3
-#    result.extend(((2, k, Direction.RIGHT, Direction.BACK, Direction.BACK_RIGHT, 3, k, Direction.RIGHT, Direction.FRONT, Direction.FRONT_RIGHT) for k in range(0, 12)))  # CSFT to #
-#    result.extend(
-#        ((2, k, Direction.RIGHT, Direction.BACK, Direction.BACK_RIGHT, 3, k, Direction.RIGHT, Direction.FRONT, Direction.FRONT_RIGHT) for k in range(13, len(key_matrix[2]) - 1)))  # spacer to numpad
-#
-#    # rows 3 to 4
-#    result.extend(
-#        ((3, k, Direction.RIGHT, Direction.BACK, Direction.BACK_RIGHT, 4, k, Direction.RIGHT, Direction.FRONT, Direction.FRONT_RIGHT) for k in range(0, len(key_matrix[3]) - 1)))  # TAB to numpad
-#
-#    # rows 4 to 5
-#    result.extend(((4, k, Direction.RIGHT, Direction.BACK, Direction.BACK_RIGHT, 5, k, Direction.RIGHT, Direction.FRONT, Direction.FRONT_RIGHT) for k in range(0, 4)))  # ESC to F4
-#    result.extend(((4, k + 1, Direction.RIGHT, Direction.BACK, Direction.BACK_RIGHT, 5, k, Direction.RIGHT, Direction.FRONT, Direction.FRONT_RIGHT) for k in range(4, 8)))  # F5 to F7
-#    result.extend(((4, k + 2, Direction.RIGHT, Direction.BACK, Direction.BACK_RIGHT, 5, k, Direction.RIGHT, Direction.FRONT, Direction.FRONT_RIGHT) for k in range(8, 11)))  # F18 to F10
-#    result.extend(((4, k + 1, Direction.RIGHT, Direction.BACK, Direction.BACK_RIGHT, 5, k, Direction.RIGHT, Direction.FRONT, Direction.FRONT_RIGHT) for k in range(13, 19)))  # F18 to F10
-
-#    return result
-
-
-# ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 def _get_key_intersection_gap_filler_edges(key_matrix: List[List[Key]], bottom_left_row_idx: int, bottom_left_key_idx: int, top_left_key_idx: int) -> List[Tuple[cadquery.Vector, cadquery.Vector]]:
     """

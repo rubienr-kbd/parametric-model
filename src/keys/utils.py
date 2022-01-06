@@ -142,40 +142,12 @@ class KeyUtils(object):
                 print(".", end="")
                 gap_filler = KeyUtils.key_face_connector(a, b, a_direction_x, b_direction_x, polyhedron_mode)
                 a.connectors.get_connector(a_direction_x).set_cad_object(gap_filler)
-                # b.connectors.get_connector(b_direction_x).set_cad_object(gap_filler)
 
                 a.expose_cad_objects()
                 b.expose_cad_objects()
             else:
                 print("x", end="")
         print("\ncompute key to key connectors: done")
-
-    # @staticmethod
-    # def connect_connectors_face(connection_info: List[Tuple[int, int, Direction, Direction, Direction, int, int, Direction, Direction, Direction]],
-    #                        key_matrix: List[List[Key]]) -> None:
-    #     print("compute connector gap filler ({}) ...".format(len(connection_info)))
-    #     for a_row, a_idx, a_direction_x, a_direction_y, a_dest_connector, \
-    #         b_row, b_idx, b_direction_x, b_direction_y, b_dest_connector in connection_info:
-    #         a = key_matrix[a_row][a_idx]
-    #         b = key_matrix[b_row][b_idx]
-
-    #         a_connector = a.connectors.get_connector(a_direction_x)
-    #         b_connector = b.connectors.get_connector(b_direction_x)
-    #         if a_connector.has_cad_object() and b_connector.has_cad_object():
-    #             print(".", end="")
-    #             a_connector = a.connectors.get_connector(a_direction_x)
-    #             b_connector = b.connectors.get_connector(b_direction_x)
-    #             loft = KeyUtils.connector(
-    #                 a_connector.get_cad_face(a_direction_y),
-    #                 b_connector.get_cad_face(b_direction_y))
-    #             a.connectors.get_connector(a_dest_connector).set_cad_object(loft)
-    #             b.connectors.get_connector(b_dest_connector).set_cad_object(loft)
-
-    #             a.expose_cad_objects()
-    #             b.expose_cad_objects()
-    #         else:
-    #             print("x", end="")
-    #     print("\ncompute connector gap filler: done")
 
     @staticmethod
     def connect_key_corner_edges(connection_info: List[Tuple[int, int, List[Tuple[cadquery.Vector, cadquery.Vector]], Direction, bool]], key_matrix: List[List[Key]]) -> None:
@@ -246,11 +218,21 @@ class KeyUtils(object):
         assembly = cadquery.Assembly()
         union = cadquery.Workplane()  # type: cadquery.Workplane
 
+        def map_color(dactyl_key: Key):
+            if key.base.is_visible:
+                color = cadquery.Color(0, 1, 0, 0.5) if dactyl_key.dactyl.is_right_hand else cadquery.Color(0, 0, 1, 0.5)
+                if dactyl_key.dactyl.is_arrow_block:
+                    color = cadquery.Color(1, 0, 0, 0.5)
+                if dactyl_key.dactyl.is_numpad_block:
+                    color = cadquery.Color(1, 1, 0, 0.5)
+                return color
+            else:
+                return cadquery.Color(1, 1, 1, 0.125)
+
         row_idx = 0
         for row in key_matrix:
             print("row {}".format(row_idx))
             for key in row:
-                color = cadquery.Color(0, 0, 1, 0.5) if key.base.is_visible else cadquery.Color(1, 1, 1, 0.125)
                 print("  {:7}:".format(key.name), end=" ")
                 if not key.base.is_visible and not DEBUG.show_invisibles:
                     print("")
@@ -264,7 +246,7 @@ class KeyUtils(object):
                     if do_unify:
                         union = union.union(cad_object, clean=do_clean_union)
                     else:
-                        assembly = assembly.add(cad_object, color=color)
+                        assembly = assembly.add(cad_object, color=map_color(key))
 
                 # connectors
                 for name, connector in key.cad_objects.connectors:
@@ -272,7 +254,7 @@ class KeyUtils(object):
                     if do_unify:
                         union = union.union(connector, clean=do_clean_union)
                     else:
-                        assembly = assembly.add(connector, color=color)
+                        assembly = assembly.add(connector, color=map_color(key))
 
                 print("")
             row_idx += 1

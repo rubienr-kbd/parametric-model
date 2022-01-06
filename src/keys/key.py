@@ -383,6 +383,21 @@ class KeySwitch(KeyBox, Computeable, CadObject):
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
+class DactylKey(object):
+
+    def __init__(self) -> None:
+        self.is_left_hand = True  # type: bool
+        self.is_arrow_block = False  # type: bool
+        self.is_numpad_block = False  # type: bool
+
+    @property
+    def is_right_hand(self) -> bool:
+        return False if self.is_left_hand else True
+
+
+# ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
 class CadObjects(IterableObject):
     def __init__(self):
         self.plane = None  # type: Optional[Shape]
@@ -397,7 +412,7 @@ class CadObjects(IterableObject):
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-class Key(Computeable, CadKeyMixin):
+class Key(Computeable, CadKeyMixin, DactylAttributesMixin):
     object_cache = ObjectCache(DEBUG)
 
     def __init__(self) -> None:
@@ -407,6 +422,7 @@ class Key(Computeable, CadKeyMixin):
         self.switch = KeySwitch(config.MODEL_CONFIG.switch)
         self.connectors = KeyConnectors()
         self.cad_objects = CadObjects()
+        self.dactyl = DactylKey()
         self.name = ""  # type: str
 
     def update(self):
