@@ -12,13 +12,10 @@ def import_config():
         - class ModelConfig
     """
     args = cli_args()
-
     model_module = args.selected_model[0]
-
     importlib.invalidate_caches()
     model_config = importlib.import_module(".config", model_module)
     model_config.MODEL_CONFIG.matrix.layout_size = args.keyboard_size
-
     return args, model_config
 
 

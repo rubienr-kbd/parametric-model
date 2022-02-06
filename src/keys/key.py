@@ -2,8 +2,8 @@ from typing import Optional, Dict
 import math
 from .key_mixins import *
 from src import model_importer
-_cliargs, config = model_importer.import_config()
 
+_cliargs, config = model_importer.import_config()
 
 """
 Indexing and terms:
@@ -74,6 +74,10 @@ Construction strategy:
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 class ObjectCache(object):
+    """
+    A naive cache implementation to reduce multiple computation of the same object.
+    Mainly used fot 3D CadQuery objects.
+    """
 
     def __init__(self, config: DEBUG):
         self.container = dict()  # type: Dict[str, cadquery.Workplane]
@@ -106,6 +110,24 @@ class ObjectCache(object):
 
 
 class KeyBase(KeyPlane, Computeable, CadObject, KeyBaseMixin):
+    """
+    The key base can seen as the external boundary of the key footprint (flat 2D plane).
+    The boundary is placed according to the keyboard layout.
+    It is then used as anchor for construction of the key switch slot, the key cap etc.
+
+    Essential key features are:
+      - unit length:          factor of scaling the key cap body a.k.a. key unit
+      - length, width, depth: key cap body dimension of the 1 unit width/depth key
+      - clearance each side:  extra spacing in between footprints, usually zero
+      - visibility:           whether the key base shall be 3D rendered
+      - connectivity:         whether the key base shall be connected
+
+    Visible vs. connected vs. filled (special cases for placeholder keys):
+      - visible, invisible:      a standard key is visible, a placeholder (i.e. near arrow up key) is invisible
+      - connected, disconnected: an invisible placeholder (i.e. below iso-enter) is disconnected, a visible placeholder (i.e. near arrow up key) is connected
+      - filled, unfilled:        placeholder keys near the arrow keys have no holes (filled), an invisible placeholder may have a hole (we don't care)
+    """
+
     def __init__(self, config: config.KeyBaseConfig) -> None:
         super(KeyBase, self).__init__()
         self.unit_length = config.unit_length  # type: float
@@ -115,10 +137,6 @@ class KeyBase(KeyPlane, Computeable, CadObject, KeyBaseMixin):
         self.clearance_right = config.clearance_x  # type: float
         self.clearance_top = config.clearance_y  # type: float
         self.clearance_bottom = config.clearance_y  # type: float
-        # placeholder key slot may be:
-        #  - visible or invisible, e.g. normal key vs invisible placeholder near arrow up
-        #  - connected or disconnected, e.g. placeholder below iso-enter vs placeholder near arrow up
-        #  - unfilled or filled, e.g. placeholder near arrow up vs placeholder below numpad enter
         self.is_visible = True  # type: bool
         self.is_filled = False  # type: bool
         self.is_connected_left = True  # type: bool
@@ -132,6 +150,7 @@ class KeyBase(KeyPlane, Computeable, CadObject, KeyBaseMixin):
 
     @is_connected.setter
     def is_connected(self, value: bool):
+        # TODO rubienr - refactor
         self.is_connected_left = value
         self.is_connected_right = value
         self.is_connected_front = value
@@ -140,11 +159,24 @@ class KeyBase(KeyPlane, Computeable, CadObject, KeyBaseMixin):
     def update(self) -> None:
         self.width = self.unit_width_factor * self.unit_length
         self.depth = self.unit_depth_factor * self.unit_length
+        # self.compute_relative_cardinal_axis()
 
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 class KeyCap(KeyBox, Computeable, CadObject):
+    """
+    Basic key cap dimensions to compute the effective key spacing and to render a rough visualization.
+    The visualization does not consider any special key shape, but instead creates an extruded block with tapering towards the top.
+    The key spacings are to computed w.r.t. the bottom footprint of the key cap.
+
+    Essential features are:
+      - width, depth:          key cap base
+      - thickness:             key cap height
+      - width/depth clearance: clearance in between keys (footprint to footprint)
+      - z clearance:           space in between key cap bottom and top skin of key base
+    """
+
     def __init__(self, config: config.KeyCapConfig) -> None:
         super(KeyCap, self).__init__()
         self.width_clearance = config.width_clearance  # type: float
@@ -183,6 +215,11 @@ class KeyCap(KeyBox, Computeable, CadObject):
 
 
 class KeySwitchSlot(KeyBox, Computeable, CadObject):
+    """
+    A slot is the cutout from the key base so that the key switch fits in.
+    This implementation is slightly configurable but only supports the Gateron key switch model.
+    """
+
     def __init__(self, config: config.KeySwitchSlotConfig) -> None:
         super(KeySwitchSlot, self).__init__()
         self.slot_width = config.width  # type: float
@@ -192,56 +229,64 @@ class KeySwitchSlot(KeyBox, Computeable, CadObject):
         self.undercut_width = config.undercut_width  # type: float
         self.undercut_thickness = config.undercut_thickness  # type: float
 
-    def compute(self, basis_face: cadquery.Workplane, do_fill: bool, cache: ObjectCache, *args, **kwargs) -> None:
+    def compute(self, basis_face: cadquery.Workplane, do_fill: bool, cache: ObjectCache, cartesian_root: Optional[CartesianRoot] = CartesianRoot(), *args, **kwargs) -> None:
         """
-        To ensure the key cap clearance in cse keys are not placed planar,
+        To ensure the key cap clearance (in case keys are not placed planar),
         we use the key cap footprint as base size for the key slot.
 
         @precondition: key cap cad object has been computed
         @param basis_face: the bottom face of the key cap
         @param do_fill: compute skin rather than slot
         @param cache: container for lookup or storing
+        @param cartesian_root: cartesian axis to use for face selection;
+          if the object is rotated, the cartesian root must share the same rotation for selectors (parallel/orthogonal/...)
         """
 
+        x_str = "{}".format(cartesian_root.x_axis)
+        y_str = "{}".format(cartesian_root.y_axis)
+        z_str = "{}".format(cartesian_root.z_axis)
+        xz = cartesian_root.zx_normal
+        yz = cartesian_root.yz_normal
+
         # use diagonals as further caching attributes
-        tl = basis_face.vertices("<X and >Y").val()  # type: cadquery.Vertex
-        tr = basis_face.vertices(">X and >Y").val()  # type: cadquery.Vertex
+        tl = basis_face.vertices("<{X} and >{Y}".format(X=x_str, Y=y_str)).val()  # type: cadquery.Vertex
+        tr = basis_face.vertices(">{X} and >{Y}".format(X=x_str, Y=y_str)).val()  # type: cadquery.Vertex
         # TODO "<X and <Y" sometimes returns a Vector insted of Vertice
         #   bl = basis_face.vertices("<X and <Y").val()  # type: cadquery.Vertex
-        bl = basis_face.vertices("<X").val()  # type: cadquery.Vertex
-        br = basis_face.vertices(">X and <Y").val()  # type: cadquery.Vertex
+        bl = basis_face.vertices("<{X}".format(X=x_str)).val()  # type: cadquery.Vertex
+        br = basis_face.vertices(">{X} and <{Y}".format(X=x_str, Y=y_str)).val()  # type: cadquery.Vertex
         diag1 = math.dist([tl.X, tl.Y], [br.X, br.Y])
         diag2 = math.dist([tr.X, tr.Y], [bl.X, bl.Y])
 
         cached = cache.get("slot", str(diag1), str(diag2), str(do_fill))
 
         if cached is None:
-            offset = basis_face.vertices(">Z").first().val()  # type: cadquery.Vertex
+            offset = basis_face.vertices(">{Z}".format(Z=z_str)).first().val()  # type: cadquery.Vertex
             z_offset = offset.Z
 
             if do_fill:
                 skin = cadquery.Workplane().sketch() \
-                    .face(basis_face.edges().vals()).faces("<Z") \
+                    .face(basis_face.edges().vals()).faces("<{Z}".format(Z=z_str)) \
                     .finalize().extrude(-self.thickness) \
                     .translate((0, 0, -z_offset))
                 self._cad_object = skin
             else:
                 top = cadquery.Workplane().sketch() \
-                    .face(basis_face.edges().vals()).faces("<Z") \
+                    .face(basis_face.edges().vals()).faces("<{Z}".format(Z=z_str)) \
                     .rect(self.slot_width, self.slot_depth, angle=90, mode="s", tag="slot").finalize().extrude(-self.undercut_thickness) \
                     .translate((0, 0, -z_offset))
 
                 undercut_front = cadquery.Workplane() \
                     .box(self.undercut_width, self.undercut_depth, self.thickness) \
                     .translate((0, -self.slot_depth / 2 - self.undercut_depth / 2, -self.undercut_thickness - self.thickness / 2))
-                undercut_back = undercut_front.mirror("XZ")
+                undercut_back = undercut_front.mirror(xz)
                 undercut_left = cadquery.Workplane() \
                     .box(self.undercut_depth, self.undercut_width, self.thickness) \
                     .translate((-self.slot_width / 2 - self.undercut_depth / 2, 0, -self.undercut_thickness - self.thickness / 2))
-                undercut_right = undercut_left.mirror("YZ")
+                undercut_right = undercut_left.mirror(yz)
                 undercut = undercut_front.union(undercut_right).union(undercut_back).union(undercut_left)
 
-                bottom = cadquery.Workplane().sketch().face(top.faces("<Z").edges().vals()).faces("<Z") \
+                bottom = cadquery.Workplane().sketch().face(top.faces("<Z".format(Z=z_str)).edges().vals()).faces("<{Z}".format(Z=z_str)) \
                     .finalize().extrude(-(self.thickness - self.undercut_thickness))
                 self._cad_object = top.union(bottom.cut(undercut))
 
@@ -249,26 +294,34 @@ class KeySwitchSlot(KeyBox, Computeable, CadObject):
         else:
             self._cad_object = cache.get("slot", str(diag1), str(diag2), str(do_fill))
 
-    def get_cad_corner_edge(self, direction_x: Direction, direction_y: Direction) -> Tuple[cadquery.Vector, cadquery.Vector]:
+    def get_cad_corner_edge(self, direction_x: Direction, direction_y: Direction, cartesian_root: CartesianRoot) -> Tuple[cadquery.Vector, cadquery.Vector]:
+        """
+        @param cartesian_root: cartesian axis to use for face selection;
+          if the object is rotated, the cartesian root must share the same rotation for selectors (parallel/orthogonal/...)
+        """
+        x_str = "{}".format(cartesian_root.x_axis)
+        y_str = "{}".format(cartesian_root.y_axis)
+        z_str = "{}".format(cartesian_root.z_axis)
+
         if direction_y is Direction.BACK:
-            face = self.get_cad_object().faces(">Y")  # type: Optional[cadquery.Workplane]
+            face = self.get_cad_object().faces(">{Y}".format(Y=y_str))  # type: Optional[cadquery.Workplane]
         elif direction_y is Direction.FRONT:
-            face = self.get_cad_object().faces("<Y")  # type: Optional[cadquery.Workplane]
+            face = self.get_cad_object().faces("<{Y}".format(Y=y_str))  # type: Optional[cadquery.Workplane]
         else:
             assert False
 
         if direction_x is Direction.LEFT:
-            edge = face.edges("<X")
+            edge = face.edges("<{X}".format(X=x_str))
         elif direction_x is Direction.RIGHT:
-            edge = face.edges(">X")
+            edge = face.edges(">{X}".format(X=x_str))
         else:
             assert False
 
-        bottom = edge.vertices("<Z").val().Center()  # type: cadquery.Vertex
-        top = edge.vertices(">Z").val().Center()  # type: cadquery.Vertex
+        bottom = edge.vertices("<{Z}".format(Z=z_str)).val().Center()  # type: cadquery.Vertex
+        top = edge.vertices(">{Z}".format(Z=z_str)).val().Center()  # type: cadquery.Vertex
         return bottom, top
 
-    def get_cad_corner_vertex(self, direction_x: Direction, direction_y: Direction, direction_z: Direction) -> cadquery.Vector:
+    def get_cad_corner_vertex(self, direction_x: Direction, direction_y: Direction, direction_z: Direction, cartesian_root: CartesianRoot) -> cadquery.Vector:
         """
         Example:
             e = cadquery.Edge.makeLine(
@@ -278,39 +331,52 @@ class KeySwitchSlot(KeyBox, Computeable, CadObject):
         @param direction_x: left or right
         @param direction_y: front or back
         @param direction_z: top or bottom
+        @param cartesian_root: cartesian axis to use for face selection;
+          if the object is rotated, the cartesian root must share the same rotation for selectors (parallel/orthogonal/...)
         @return:
         """
 
+        x_str = "{}".format(cartesian_root.x_axis)
+        y_str = "{}".format(cartesian_root.y_axis)
+        z_str = "{}".format(cartesian_root.z_axis)
+
         if direction_z == Direction.TOP:
-            face = self.get_cad_object().faces(">Z")  # type: Optional[cadquery.Workplane]
+            face = self.get_cad_object().faces(">{Z}".format(Z=z_str))  # type: Optional[cadquery.Workplane]
         elif direction_z == Direction.BOTTOM:
-            face = self.get_cad_object().faces("<Z")  # type: Optional[cadquery.Workplane]
+            face = self.get_cad_object().faces("<{Z}".format(Z=z_str))  # type: Optional[cadquery.Workplane]
         else:
             assert False
 
         if direction_y is Direction.BACK:
-            face = face.vertices(">Y")
+            face = face.vertices(">{Y}".format(Y=y_str))
         elif direction_y is Direction.FRONT:
-            face = face.vertices("<Y")
+            face = face.vertices("<{Y}".format(Y=y_str))
         else:
             assert False
 
         if direction_x is Direction.LEFT:
-            return face.vertices("<X").val().Center()
+            return face.vertices("<{X}".format(X=x_str)).val().Center()
         elif direction_x is Direction.RIGHT:
-            return face.vertices(">X").val().Center()
+            return face.vertices(">{X}".format(X=x_str)).val().Center()
         else:
             assert False
 
-    def get_cad_face(self, direction: Direction) -> cadquery.Workplane:
+    def get_cad_face(self, direction: Direction, cartesian_root: CartesianRoot) -> cadquery.Workplane:
+        """
+        @param cartesian_root: cartesian axis to use for face selection;
+          if the object is rotated, the cartesian root must share the same rotation for selectors (parallel/orthogonal/...)
+        """
+        x_str = "{}".format(cartesian_root.x_axis)
+        y_str = "{}".format(cartesian_root.y_axis)
+
         if direction is Direction.FRONT:
-            return self._cad_object.faces("|Y").faces("<Y")
+            return self._cad_object.faces("|{Y}".format(Y=y_str)).faces("<{Y}".format(Y=y_str))
         elif direction is Direction.BACK:
-            return self._cad_object.faces("|Y").faces(">Y")
+            return self._cad_object.faces("|{Y}".format(Y=y_str)).faces(">{Y}".format(Y=y_str))
         elif direction is Direction.LEFT:
-            return self._cad_object.faces("|X").faces("<X")
+            return self._cad_object.faces("|{X}".format(X=x_str)).faces("<{X}".format(X=x_str))
         elif direction is Direction.RIGHT:
-            return self._cad_object.faces("|X").faces(">X")
+            return self._cad_object.faces("|{X}".format(X=x_str)).faces(">{X}".format(X=x_str))
         else:
             assert False
 
@@ -323,15 +389,22 @@ class KeyConnector(CadObject):
     def __init__(self):
         super(KeyConnector, self).__init__()
 
-    def get_cad_face(self, direction: Direction) -> cadquery.Workplane:
+    def get_cad_face(self, direction: Direction, cartesian_root: CartesianRoot) -> cadquery.Workplane:
+        """
+        @param cartesian_root: cartesian axis to use for face selection;
+          if the object is rotated, the cartesian root must share the same rotation for selectors (parallel/orthogonal/...)
+        """
+        x_str = "{}".format(cartesian_root.x_axis)
+        y_str = "{}".format(cartesian_root.y_axis)
+
         if direction is Direction.FRONT:
-            return self._cad_object.faces("|Y").faces("<Y")
+            return self._cad_object.faces("|{Y}".format(Y=y_str)).faces("<{Y}".format(Y=y_str))
         elif direction is Direction.BACK:
-            return self._cad_object.faces("|Y").faces(">Y")
+            return self._cad_object.faces("|{Y}".format(Y=y_str)).faces(">{Y}".format(Y=y_str))
         elif direction is Direction.LEFT:
-            return self._cad_object.faces("|X").faces("<X")
+            return self._cad_object.faces("|{X}".format(X=x_str)).faces("<{X}".format(X=x_str))
         elif direction is Direction.RIGHT:
-            return self._cad_object.faces("|X").faces(">X")
+            return self._cad_object.faces("|{X}".format(X=x_str)).faces(">{X}".format(X=x_str))
         else:
             assert False
 

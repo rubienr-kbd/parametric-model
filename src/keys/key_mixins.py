@@ -1,4 +1,7 @@
 from __future__ import annotations
+
+import operator
+from cmath import sqrt
 from typing import TYPE_CHECKING, Union, List, Tuple
 from enum import Enum
 import cadquery
@@ -12,6 +15,10 @@ from src.cfg.debug import DEBUG
 
 
 class Direction(Enum):
+    """
+    Direction hints as seen from the keyboard user perspective.
+    """
+
     TOP = 1
     BOTTOM = 2
     LEFT = 3
@@ -25,6 +32,7 @@ class Direction(Enum):
 
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 
 class IterableObject(object):
     def __iter__(self):
@@ -42,7 +50,7 @@ class Computeable(object):
 
     def update(self: "CadObject", *args, **kwargs) -> None:
         """
-        Resolves/computes input data dependencies for compute().
+        Resolves/computes input data dependencies for a subsequent compute().
         """
         pass
 
@@ -83,25 +91,173 @@ class CadObject(object):
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
+class CartesianRoot(object):
+    """
+    The cartesian root is used to track translation/rotation.
+    It is a relative anchor for objects that are displaced from the absolute cartesian root and is mainly used for CadQuery selectors where the normals relative to the object are needed.
+
+    The axes vectors are relative to the global coordinate system's origin (not to relative to the relative origin).
+    The axes vectors must be orthogonal altogether.
+    The axes vectors will be normed upon assignment.
+    """
+
+    def __init__(self):
+        self.origin = (0, 0, 0)
+        self._x_axis = (1, 0, 0)
+        self._y_axis = (0, 1, 0)
+        self._z_axis = (0, 0, 1)
+        self._xy_normal = self._z_axis
+        self._yz_normal = self._x_axis
+        self._zx_normal = self._y_axis
+
+    @property
+    def x_axis(self) -> Tuple[float, float, float]:
+        return self._x_axis
+
+    @property
+    def y_axis(self) -> Tuple[float, float, float]:
+        return self._y_axis
+
+    @property
+    def z_axis(self) -> Tuple[float, float, float]:
+        return self._z_axis
+
+    @x_axis.setter
+    def x_axis(self, value: Tuple[float, float, float]) -> None:
+        self._x_axis = self._normalize_vector(value)
+
+    @y_axis.setter
+    def y_axis(self, value: Tuple[float, float, float]) -> None:
+        self._y_axis = self._normalize_vector(value)
+
+    @z_axis.setter
+    def z_axis(self, value: Tuple[float, float, float]) -> None:
+        self._z_axis = self._normalize_vector(value)
+
+    @property
+    def xy_normal(self) -> Tuple[float, float, float]:
+        return self._xy_normal
+
+    @property
+    def yz_normal(self) -> Tuple[float, float, float]:
+        return self._yz_normal
+
+    @property
+    def zx_normal(self) -> Tuple[float, float, float]:
+        return self._zx_normal
+
+    def update_axes(self, x: Tuple[float, float, float], y: Tuple[float, float, float], z: Tuple[float, float, float]) -> None:
+        """
+        Set new xyz axis: normalize axis, compute normals and check the orthogonality.
+        """
+        self.x_axis = x
+        self.y_axis = y
+        self.z_axis = z
+        self._compute_normals()
+
+    def _compute_normals(self):
+        self._assert_orthogonality()
+        self._xy_normal = self.z_axis
+        self._yz_normal = self.x_axis
+        self._zx_normal = self.y_axis
+
+    @staticmethod
+    def _normalize_vector(axis: Tuple[float, float, float]) -> Tuple[float, float, float]:
+        length = sqrt(axis[0] * axis[0] + axis[1] * axis[1] + axis[2] * axis[2])
+        assert length.imag == 0.0
+        factor = 1.0 / length.real
+        return factor * axis[0], factor * axis[1], factor * axis[2]
+
+    def _assert_orthogonality(self, allowed_error: float = 0.001):
+        def product(v1: Tuple[float, float, float], v2: Tuple[float, float, float]) -> float:
+            return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2]
+
+        p = product(self.x_axis, self.y_axis)
+        assert -allowed_error < p < allowed_error, "product x * y is not 0: {} * {} = {}".format(self.x_axis, self.y_axis, p)
+        p = product(self.y_axis, self.z_axis)
+        assert -allowed_error < p < allowed_error, "product y * z is not 0: {} * {} = {}".format(self.y_axis, self.z_axis, p)
+        p = product(self.z_axis, self.x_axis)
+        assert -allowed_error < p < allowed_error, "product z * x is not 0: {} * {} = {}".format(self.z_axis, self.x_axis, p)
+
+
+# ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
 class KeyRect(object):
+    """
+    Rectangular 2D plane.
+    """
+
     def __init__(self):
         self.width = 0  # type: float
         self.depth = 0  # type: float
 
 
 class KeyBox(KeyRect):
+    """
+    3D box.
+    """
+
     def __init__(self):
         super(KeyBox, self).__init__()
         self.thickness = 0  # type: float
 
 
 class KeyPlane(KeyRect):
+    ABSOLUTE_CARTESIAN = CartesianRoot()
+
     def __init__(self):
+        """
+        self.x_axis: x_axis vector relative to object (considers self.rotation + self.rotation_offset)
+        self.y_axis: y_axis vector relative to object (considers self.rotation + self.rotation_offset)
+        self.z_axis: z_axis vector relative to object (considers self.rotation + self.rotation_offset)
+        """
         super(KeyPlane, self).__init__()
         self.position = (0, 0, 0)  # type: Tuple[float, float, float]
         self.position_offset = (0, 0, 0)  # type: Tuple[float, float, float]
         self.rotation = (0, 0, 0)  # type: Tuple[float, float, float]
         self.rotation_offset = (0, 0, 0)  # type: Tuple[float, float, float]
+        self.relative_cartesian = CartesianRoot()
+
+    @property
+    def total_translation(self) -> Tuple[float, float, float]:
+        return (self.position[0] + self.position_offset[0],
+                self.position[1] + self.position_offset[1],
+                self.position[2] + self.position_offset[2])
+
+    @property
+    def total_rotation(self) -> Tuple[float, float, float]:
+        return (self.rotation[0] + self.rotation_offset[0],
+                self.rotation[1] + self.rotation_offset[1],
+                self.rotation[2] + self.rotation_offset[2])
+
+    def compute_relative_cardinal_translation(self) -> None:
+        """
+        Updates the relative cartesian origin according to the total translation (position + position_offset).
+        """
+        self.relative_cartesian.origin = tuple(map(operator.add, self.position, self.position_offset))
+
+    def compute_relative_cardinal_rotation(self) -> None:
+        """
+        Updates the relative cartesian vectors according to the total rotation (rotation + rotation_offset).
+        Note: the computation misuses CadQuery for sake of laziness.
+        """
+
+        rx, ry, rz = self.total_rotation
+        cq_origin = cadquery.Vector(self.ABSOLUTE_CARTESIAN.origin)
+        cq_vec_x, cq_vec_y, cq_vec_z = cadquery.Vector(self.ABSOLUTE_CARTESIAN.x_axis), \
+                                       cadquery.Vector(self.ABSOLUTE_CARTESIAN.y_axis), \
+                                       cadquery.Vector(self.ABSOLUTE_CARTESIAN.z_axis)
+
+        cq_line_x = cadquery.Edge.makeLine(cq_origin, cq_vec_x)
+        cq_line_y = cadquery.Edge.makeLine(cq_origin, cq_vec_y)
+        cq_line_z = cadquery.Edge.makeLine(cq_origin, cq_vec_z)
+
+        line_x = cq_line_x.rotate(cq_origin, cq_vec_z, rz).rotate(cq_origin, cq_vec_x, rx).rotate(cq_origin, cq_vec_y, ry)
+        line_y = cq_line_y.rotate(cq_origin, cq_vec_z, rz).rotate(cq_origin, cq_vec_x, rx).rotate(cq_origin, cq_vec_y, ry)
+        line_z = cq_line_z.rotate(cq_origin, cq_vec_z, rz).rotate(cq_origin, cq_vec_x, rx).rotate(cq_origin, cq_vec_y, ry)
+
+        self.relative_cartesian.update_axes(line_x.tangentAt(0).toTuple(), line_y.tangentAt(0).toTuple(), line_z.tangentAt(0).toTuple())
 
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -144,51 +300,67 @@ class CadKeyMixin(object):
         return cad_object.tag("{}{}".format(tag_text, "_invisible" if not is_visible else ""))
 
     def post_compute_cad_key_base(self: Key) -> None:
+        origin, relative, (rx, ry, rz) = self.base.ABSOLUTE_CARTESIAN.origin, self.base.relative_cartesian, self.base.total_rotation
         self.base._cad_object = self.base.get_cad_object() \
-            .translate(tuple(self.base.position)) \
-            .translate(tuple(self.base.position_offset))
+            .rotate(origin, relative.z_axis, rz) \
+            .rotate(origin, relative.x_axis, rx) \
+            .rotate(origin, relative.y_axis, ry) \
+            .translate(tuple(self.base.total_translation))
         self.base._cad_object = CadKeyMixin.tag(self.base.get_cad_object(), self.base.is_visible, "key_base")
 
     def post_compute_key_name(self: Key) -> cadquery.Workplane:
         o = self.object_cache.get("name", self.name)
         if o is None:
+            origin, relative, (rx, ry, rz) = self.base.ABSOLUTE_CARTESIAN.origin, self.base.relative_cartesian, self.base.total_rotation
             o = self.base.get_cad_object().faces() \
-                .text(self.name, 5, 1).faces("<Z").wires()
+                .text(self.name, 5, 1).faces("<Z").wires() \
+                .rotate(origin, relative.z_axis, rz) \
+                .rotate(origin, relative.x_axis, rx) \
+                .rotate(origin, relative.y_axis, ry)
             o = CadKeyMixin.tag(o, self.base.is_visible, "name")
             self.object_cache.store(o, "name", self.name)
 
-        return o \
-            .translate(tuple(self.base.position)) \
-            .translate(tuple(self.base.position_offset))
+        return o.translate(tuple(self.base.total_translation))
 
     def post_compute_key_origin(self: Key) -> cadquery.Workplane:
         o = self.object_cache.get("origin", self.name)
         if o is None:
+            origin, relative, (rx, ry, rz) = self.base.ABSOLUTE_CARTESIAN.origin, self.base.relative_cartesian, self.base.total_rotation
             o = self.base.get_cad_object().faces() \
-                .circle(0.5).extrude(1).faces("<Z").edges("not %Line")
+                .circle(0.5).extrude(1).faces("<Z").edges("not %Line") \
+                .rotate(origin, relative.z_axis, rz) \
+                .rotate(origin, relative.x_axis, rx) \
+                .rotate(origin, relative.y_axis, ry)
             o = CadKeyMixin.tag(o, self.base.is_visible, "origin")
             self.object_cache.store(o, "origin", self.name)
 
-        return o \
-            .translate(tuple(self.base.position)) \
-            .translate(tuple(self.base.position_offset))
+        return o.translate(tuple(self.base.total_translation))
 
     def post_compute_cad_cap(self: Key):
+        origin, relative, (rx, ry, rz) = self.base.ABSOLUTE_CARTESIAN.origin, self.base.relative_cartesian, self.base.total_rotation
         self.cap._cad_object = self.cap.get_cad_object() \
-            .translate(tuple(self.base.position)) \
-            .translate(tuple(self.base.position_offset))
+            .rotate(origin, relative.z_axis, rz) \
+            .rotate(origin, relative.x_axis, rx) \
+            .rotate(origin, relative.y_axis, ry) \
+            .translate(tuple(self.base.total_translation))
         self.cap._cad_object = CadKeyMixin.tag(self.cap.get_cad_object(), self.base.is_visible, "cap")
 
     def post_compute_cad_slot(self: Key) -> None:
+        origin, relative, (rx, ry, rz) = self.base.ABSOLUTE_CARTESIAN.origin, self.base.relative_cartesian, self.base.total_rotation
         self.slot._cad_object = self.slot.get_cad_object() \
-            .translate(tuple(self.base.position)) \
-            .translate(tuple(self.base.position_offset))
+            .rotate(origin, relative.z_axis, rz) \
+            .rotate(origin, relative.x_axis, rx) \
+            .rotate(origin, relative.y_axis, ry) \
+            .translate(tuple(self.base.total_translation))
         self.slot._cad_object = CadKeyMixin.tag(self.slot.get_cad_object(), self.base.is_visible, "slot")
 
     def post_compute_cad_switch(self: Key) -> None:
+        origin, relative, (rx, ry, rz) = self.base.ABSOLUTE_CARTESIAN.origin, self.base.relative_cartesian, self.base.total_rotation
         self.switch._cad_object = self.switch.get_cad_object() \
-            .translate(tuple(self.base.position)) \
-            .translate(tuple(self.base.position_offset))
+            .rotate(origin, relative.z_axis, rz) \
+            .rotate(origin, relative.x_axis, rx) \
+            .rotate(origin, relative.y_axis, ry) \
+            .translate(tuple(self.base.total_translation))
         self.switch._cad_object = CadKeyMixin.tag(self.switch.get_cad_object(), self.base.is_visible, "switch")
 
     def final_post_compute(self: Key):

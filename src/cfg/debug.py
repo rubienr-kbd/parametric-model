@@ -20,8 +20,13 @@ class DebugConfig(object):
         self.hide_slots: removes all slots from export/view
         self.hide_connectors: removes all connectors from export/view
 
-        self.unify_in_cadquery_editor: unifies otherwise assemblies the rendered view; False recommended
-        self.unify_in_step_export: unifies otherwise assemblies the rendered view; if True slower else very fast; True recommended
+        self.unify_in_cadquery_editor: unifies otherwise assemblies the rendered view; False recommended;
+                                       non solids such as name, origin etc. are removed (not supported by union)
+        self.unify_in_step_export: unifies otherwise assemblies the rendered view; slower if True else very fast;
+                                   non solids such as name, origin etc. are removed (not supported by union)
+                                   FreeCAD unifies the assembly nonetheless (loads the step file slightly slower;
+                                   see: edit - preferences - import - step - enable step compound merge);
+
         self.do_clean_union_in_cadquery: to have a clean shape union; very slow if True else faster; False recommended
         self.do_clean_union_in_step_export: to have a clean shape union; very slow if True else faster; False recommended for freecad
 
@@ -41,7 +46,7 @@ class DebugConfig(object):
         self.hide_connectors = False  # type: bool
 
         self.unify_in_cadquery_editor = False  # type: bool
-        self.unify_in_step_export = True  # type: bool
+        self.unify_in_step_export = False  # type: bool
         self.do_clean_union_in_cadquery = False  # type: bool
         self.do_clean_union_in_step_export = False  # type: bool
 

@@ -1,6 +1,7 @@
 from .key import *
 import cqmore
 
+
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -96,7 +97,7 @@ class KeyUtils(object):
         """
 
         if polyhedron_mode:
-            def get_vertices(face_a : cadquery.Face, face_b : cadquery.Face) -> List[cadquery.Vector]:
+            def get_vertices(face_a: cadquery.Face, face_b: cadquery.Face) -> List[cadquery.Vector]:
                 vs_a = face_a.vertices().vals()
                 vs_b = face_b.vertices().vals()
                 result = list()
@@ -104,18 +105,21 @@ class KeyUtils(object):
                 result.extend([v.Center() for v in vs_b])
                 return result
 
-            points = get_vertices(first_key.slot.get_cad_face(first_direction), second_key.slot.get_cad_face(second_direction))
+            points = get_vertices(first_key.slot.get_cad_face(first_direction,first_key.base.relative_cartesian),
+                                  second_key.slot.get_cad_face(second_direction, second_key.base.relative_cartesian))
             return cqmore.Workplane().polyhedron(*cqmore.polyhedron.hull(points))
         else:
             def get_wire(face):
                 return face.first().wires().val()
-            first_wire = get_wire(first_key.slot.get_cad_face(first_direction))
-            second_wire = get_wire(second_key.slot.get_cad_face(second_direction))
+
+            first_wire = get_wire(first_key.slot.get_cad_face(first_direction, first_key.base.relative_cartesian))
+            second_wire = get_wire(second_key.slot.get_cad_face(second_direction, second_key.base.relative_cartesian))
             return cadquery.Workplane(cadquery.Solid.makeLoft([first_wire, second_wire]))
 
     @staticmethod
-    def connect_keys_face(connection_info: List[Tuple[int, int, Direction, int, int, Direction, bool]],
-                     key_matrix: List[List[Key]]) -> None:
+    def connect_keys_face(
+            key_matrix: List[List[Key]],
+            connection_info: List[Tuple[int, int, Direction, int, int, Direction, bool]]) -> None:
         """
         Creates horizontal or vertical gap filler in between the keys as listed in the connection info.
 
@@ -150,60 +154,76 @@ class KeyUtils(object):
         print("\ncompute key to key connectors: done")
 
     @staticmethod
-    def connect_key_corner_edges(connection_info: List[Tuple[int, int, List[Tuple[cadquery.Vector, cadquery.Vector]], Direction, bool]], key_matrix: List[List[Key]]) -> None:
+    def connect_key_corner_edges(key_matrix: List[List[Key]],
+                                 connection_info: List[Tuple[int, int, List[Tuple[cadquery.Vector, cadquery.Vector]], Direction, bool]]) -> None:
         """
         Note: Use default (loft) filling method whenever possible; use polyhedron filling method only if loft is not possible.
         Complex polyhedrons most likely will not result in a nice tesselation.
         Lofts cannot be uses if keys have a rotation/displacement w.r.t. to the normal planar distribution.
         """
-        print("compute corner-edge gap filler ({}) ...".format(len(connection_info)))
+        print("compute key corner-edge gap filler ({}) ...".format(len(connection_info)))
 
         for gap_filler in connection_info:
+            print(".", end="")
             row, col, edges, dest_direction, polyhedron_mode = gap_filler
             gap_filler = KeyUtils.loft_along_edges(edges) if not polyhedron_mode else KeyUtils.polyhedron_along_edges(edges)
             key = key_matrix[row][col]
             key.connectors.get_connector(dest_direction).set_cad_object(gap_filler)
             key.expose_cad_objects()
 
-        print("\ncompute loft gap filler: done")
+        print("\ncompute key corner-edge gap filler: done")
 
     @staticmethod
-    def remove_cad_objects(key_matrix: List[List[Key]], remove_non_solids: bool) -> None:
+    def filter_cad_objects(key_matrix: List[List[Key]], remove_non_solids: bool) -> None:
         """
         Filters out cad objects from view that must be computed due to dependencies but shall not be rendered.
         @param key_matrix: pool of keys with pre-computed placement and cad objects
-        @param remove_non_solids: removes also objects such as placement, name or origin if True
+        @param remove_non_solids: removes also objects such as placement, name or origin if True; needed if unify squash method is used
         """
         row_idx = 0
-        print("removing cad objects ...")
+        print("filter cad objects ...")
         for row in key_matrix:
             print("row {}".format(row_idx))
             for key in row:
                 print("  {:7}:".format(key.name), end=" ")
                 if not DEBUG.render_placement or remove_non_solids:
                     key.cad_objects.plane = None
-                    print("placement", end=" ")
+                    print("-placement", end=" ")
+                else:
+                    print("+placement", end=" ")
                 if not DEBUG.render_origin or remove_non_solids:
                     key.cad_objects.origin = None
-                    print("origin", end=" ")
+                    print("-origin", end=" ")
+                else:
+                    print("+origin", end=" ")
                 if not DEBUG.render_name or remove_non_solids:
                     key.cad_objects.name = None
-                    print("name", end=" ")
+                    print("-name", end=" ")
+                else:
+                    print("+name", end=" ")
                 if not DEBUG.render_cap:
                     key.cad_objects.cap = None
-                    print("cap", end=" ")
+                    print("-cap", end=" ")
+                else:
+                    print("+cap", end=" ")
                 if not DEBUG.render_slots:
                     key.cad_objects.slot = None
-                    print("slot", end=" ")
+                    print("-slot", end=" ")
+                else:
+                    print("+slot", end=" ")
                 if not DEBUG.render_switch:
                     key.cad_objects.switch = None
-                    print("switch", end=" ")
+                    print("-switch", end=" ")
+                else:
+                    print("+switch", end=" ")
                 if not DEBUG.render_connectors:
                     key.cad_objects.connectors = []
-                    print("connectors", end=" ")
+                    print("-connectors", end=" ")
+                else:
+                    print("+connectors", end=" ")
                 print("")
             row_idx += 1
-        print("removing cad objects: done")
+        print("filter cad objects: done")
 
     @staticmethod
     def squash(key_matrix: List[List[Key]], do_unify: bool, do_clean_union: bool) -> Union[cadquery.Workplane, cadquery.Assembly]:
@@ -214,7 +234,9 @@ class KeyUtils(object):
         @param do_clean_union: recommended False for prototyping, True has weak the performance
         @return cadquery.Workplane if do_unify else cadquery.Assembly
         """
-        print("final assembly ({}) ...".format("union" if do_unify else "assembly"))
+
+        print("final assembly ({} squash method) ...".format("unify" if do_unify else "assembly"))
+
         assembly = cadquery.Assembly()
         union = cadquery.Workplane()  # type: cadquery.Workplane
 
@@ -235,28 +257,27 @@ class KeyUtils(object):
             for key in row:
                 print("  {:7}:".format(key.name), end=" ")
                 if not key.base.is_visible and not DEBUG.show_invisibles:
-                    print("")
+                    print("<key not visible>")
                     continue
 
+                # key connectors
+                cad_objects = [c for c in key.cad_objects.connectors]
                 # key components
-                for object_name, cad_object in [(attr_name, value) for attr_name, value in key.cad_objects]:
-                    if type(cad_object) is list:
+                for c in key.cad_objects:
+                    if type(c[1]) is list:
                         continue
-                    print("{}".format(object_name), end=" ")
-                    if do_unify:
-                        union = union.union(cad_object, clean=do_clean_union)
-                    else:
-                        assembly = assembly.add(cad_object, color=map_color(key))
+                    if c[0] == "cap" and key.base.is_filled:
+                        continue
+                    cad_objects.append(c)
 
-                # connectors
-                for name, connector in key.cad_objects.connectors:
+                for name, cq_object in cad_objects:
                     print("{}".format(name), end=" ")
                     if do_unify:
-                        union = union.union(connector, clean=do_clean_union)
+                        union = union.union(cq_object, clean=do_clean_union)
                     else:
-                        assembly = assembly.add(connector, color=map_color(key))
+                        assembly = assembly.add(cq_object, color=map_color(key))
 
                 print("")
             row_idx += 1
-        print("final assembly ({}): done".format("union" if do_unify else "assembly"))
+        print("final assembly ({} squash method): done".format("unify" if do_unify else "assembly"))
         return union if do_unify else assembly

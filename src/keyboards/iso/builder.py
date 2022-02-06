@@ -1,6 +1,5 @@
-from typing import List
-
 from .iso_matrix import *
+from src.cli_args import cli_args
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -21,26 +20,26 @@ def compute(**kwargs) -> List[List[Key]]:
       n. clean up cad objects that shall not be rendered
     """
 
+    do_unify = kwargs.get('do_unify', False)
+
     # 1.
     key_matrix = build_key_matrix()
 
     # 2.
+    apply_orientation_offset(key_matrix)
     apply_translation_offset(key_matrix)
-    # apply_orientation_offset(key_matrix)
-    # apply_rotation_offset(key_matrix)
 
     # 3.
     compute_placement_and_cad_objects(key_matrix)
 
     # 4.
     conn_map = get_key_face_connection_mapping(key_matrix)
-    KeyUtils.connect_keys_face(conn_map, key_matrix)
+    KeyUtils.connect_keys_face(key_matrix, conn_map)
 
     conn_map = get_key_corner_edge_connection_mapping(key_matrix)
-    KeyUtils.connect_key_corner_edges(conn_map, key_matrix)
+    KeyUtils.connect_key_corner_edges(key_matrix, conn_map)
 
     # n.
-    kwargs.get('for_export', False)
-    KeyUtils.remove_cad_objects(key_matrix, remove_non_solids=kwargs.get('for_export', False))
+    KeyUtils.filter_cad_objects(key_matrix, remove_non_solids=do_unify)
 
     return key_matrix

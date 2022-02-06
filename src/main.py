@@ -1,15 +1,22 @@
 #!/usr/bin/env python3
 import os
 import sys
-sys.path.append(os.getcwd())  # cq-editor workaround
+import re
+
+# cq-editor workaround: if main.py is loaded by cq-editor then sys.path is not set as expected and the modules to load won't be found.
+# In order to work, cq-editor must be started from the src folder.
+paths = [os.getcwd(), re.sub(".src$", "", os.getcwd())]
+[sys.path.insert(0, p) for p in paths if p not in sys.path]
+
 from pathlib import Path
-import cadquery
 from time import perf_counter
-from cfg.debug import DEBUG
 from model_importer import import_config, import_builder
+from cfg.debug import DEBUG
+import cadquery
+from keys.utils import KeyUtils
+
 cliargs, model_config = import_config()
 builder = import_builder()
-from keys.utils import KeyUtils
 
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -22,7 +29,7 @@ def run(perf_counter_begin: float) -> None:
     do_clean_union = DEBUG.export_cleaned_union if is_invoked_by_cli else DEBUG.render_cleaned_union
 
     print("{:.3f}s elapsed for loading".format(pc_1 - perf_counter_begin))
-    key_matrix = builder.compute(for_export=cliargs.export)
+    key_matrix = builder.compute(do_unify=do_unify)
     pc_2 = perf_counter()
     print("{:.3f}s elapsed for construction".format(pc_2 - pc_1))
 

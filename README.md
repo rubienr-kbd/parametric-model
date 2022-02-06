@@ -8,28 +8,26 @@ Inspired by
 * [DIY Keybords - dactyl-keyboard](https://github.com/diykeyboards/dactyl-keyboard) which is a fork of 
 * [Dactyl-ManuForm Keyboard](https://github.com/tshort/dactyl-keyboard).
 
-
 what works yet
 * planar key placement
-* non planar key placement (simple key translation is possible)
+* non planar key placement 
+* key rotation (x,y,z)
 * key slots with undercut (for Gateron switches)
-* naive gap filler in between keys
-* script can be loaded with cq-editor for debugging (provides a fast result; for development)
+* gap filler in between key slots
+* script can be loaded with cq-editor (fast computation for development)
 * script can be run standalone
-* script can export to STEP file format (rather slow; the exported file can be loaded with FreeCAD for refinement)
+* script can export to STEP file format (the STEP file can be loaded by FreeCAD for refinement)
 * multiple configs/layouts possible
 
 what doesn't work now
-* key orientation (simple rotation to change direction the key dish shows)
-* key rotation (rotation around its own Z-axis; i.e. for additional thumb keys)
 * no walls
-* no baseplate 
-* basically nothing except of the planar slots for key switches
-
+* no baseplate
+* no stabilizer slots for long keys
 
 what is the aim
 * configurable layout: ISO, ANSI, size (full, no numpad, no arrow keys)
-* split keyboard and non planar layouts should be realize-able
+* split keyboard
+* planar, non planar and dactyl layout
 
 what are non-aims
 * sophisticated key cap modelling (the key is a simple extruded base, tapered on top)
@@ -53,7 +51,7 @@ what are non-aims
     python src/main.py --export
 
     # to render in cadquery editor  (usually takes seconds to render)
-    cd ./src
+    cd ./src # cq-editor must be started form the src folder
     cq-editor
     # then load main.py from disk, do notstart with cli args: cq-editor src/main.py
 
@@ -75,3 +73,7 @@ STEP file in FreeCad
 non planar key example
 <br/>
 <img src="./resources/freecad-example-02.png" width="30%" />
+<br/>
+key rotation
+<br/>
+<img src="./resources/freecad-example-03.png" width="30%" />

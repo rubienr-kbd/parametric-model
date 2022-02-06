@@ -1,5 +1,3 @@
-import operator
-
 from cadquery import NearestToPointSelector
 
 from src.iso_keys.keys import *
@@ -291,15 +289,46 @@ def apply_translation_offset(key_matrix: List[List[Key]]) -> None:
     key_idx = 0
     for row in key_matrix:
         for key in row:
+            # TODO rubienr - prototyping
             if row_idx == 0 and key_idx == 3:
                 key.base.position_offset = tuple(map(operator.add, key.base.position_offset, (0, 0, 2)))
+                key.base.compute_relative_cardinal_translation()
             if row_idx == 1 and key_idx == 1:
                 key.base.position_offset = tuple(map(operator.add, key.base.position_offset, (0, 0, 2)))
-            else:
-                key.base.position_offset = tuple(map(operator.add, key.base.position_offset, (0, 0, 0)))
+                key.base.compute_relative_cardinal_translation()
             key_idx += 1
         key_idx = 0
         row_idx += 1
+
+
+# ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+def apply_orientation_offset(key_matrix: List[List[Key]]) -> None:
+    """
+    Compute extra rotation offset; usually for non-planar keyboards.
+    The extra offset is typically a small offset w.r.t. the real layout and applies mostly to X and Y-axis.
+
+    X-rotation ... turns the dish front or back
+    Y-rotation ... turns the dish to left or right
+    Z-rotation ... turns the dish orientation around the Z-axis
+    """
+    row_idx = 0
+    key_idx = 0
+    for row in key_matrix:
+        for key in row:
+            if row_idx == 1 and key_idx == 1:
+                # TODO rubienr - prototyping
+                key.base.rotation_offset = tuple(map(operator.add, key.base.rotation_offset, (5, 5, 5)))
+                key.base.compute_relative_cardinal_rotation()
+            key_idx += 1
+        key_idx = 0
+        row_idx += 1
+
+    pass
+
+
+# ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 def compute_placement_and_cad_objects(key_matrix: List[List[Key]]) -> None:
@@ -355,9 +384,10 @@ def compute_placement_and_cad_objects(key_matrix: List[List[Key]]) -> None:
                           capth=key.cap.thickness,
                           vis="yes" if key.base.is_visible else "no ",
                           dactyl=""
-                                 + ("r" if key.dactyl.is_right_hand else "l")
-                                 + ("a" if key.dactyl.is_arrow_block else " ")
-                                 + ("n" if key.dactyl.is_numpad_block else " ")))
+                                 + ("ri" if key.dactyl.is_right_hand else "le")
+                                 + (" arr" if key.dactyl.is_arrow_block else "")
+                                 + (" nmb" if key.dactyl.is_numpad_block else "")
+                                 + (" key" if not key.dactyl.is_numpad_block and not key.dactyl.is_arrow_block else "")))
 
             col_idx = col_idx + 1
         last_row = row
@@ -393,6 +423,8 @@ def get_key_face_connection_mapping(key_matrix: List[List[Key]]) -> List[Tuple[i
     Specifies which keys and which keys' face are to be connected.
     @param key_matrix: pool of keys with pre-computed placement and cad objects
     """
+
+    print("compute key face connection mapping ...")
     result = list()  # type: List[Tuple[int, int, Direction, int, int, Direction, bool]]
 
     polyhedron_mode = True
@@ -464,6 +496,8 @@ def get_key_face_connection_mapping(key_matrix: List[List[Key]]) -> List[Tuple[i
 
     vertical_face_gap_filler()
 
+    print("compute key face connection mapping: done")
+
     return result
 
 
@@ -484,10 +518,18 @@ def _get_key_intersection_gap_filler_edges(key_matrix: List[List[Key]], bottom_l
         bottom left key index
     """
     result = list()  # type: List[Tuple[cadquery.Vector, cadquery.Vector]]
-    result.append(key_matrix[bottom_left_row_idx][bottom_left_key_idx].slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))
-    result.append(key_matrix[bottom_left_row_idx][bottom_left_key_idx + 1].slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK))
-    result.append(key_matrix[bottom_left_row_idx + 1][top_left_key_idx + 1].slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT))
-    result.append(key_matrix[bottom_left_row_idx + 1][top_left_key_idx].slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))
+    tl = key_matrix[bottom_left_row_idx][bottom_left_key_idx]
+    result.append(tl.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK, tl.base.relative_cartesian))
+
+    tr = key_matrix[bottom_left_row_idx][bottom_left_key_idx + 1]
+    result.append(tr.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK, tr.base.relative_cartesian))
+
+    br = key_matrix[bottom_left_row_idx + 1][top_left_key_idx + 1]
+    result.append(br.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT, br.base.relative_cartesian))
+
+    bl = key_matrix[bottom_left_row_idx + 1][top_left_key_idx]
+    result.append(bl.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT, bl.base.relative_cartesian))
+
     return result
 
 
@@ -499,6 +541,8 @@ def get_key_corner_edge_connection_mapping(key_matrix: List[List[Key]]) -> List[
         - the direction where to attach the key connector
         - a flag indicating polyhedron mode (True) or naive loft mode (False)
     """
+
+    print("compute key corner-edge connection mapping ...")
 
     polyhedron_mode = True
     result = list()  # type: List[Tuple[int, int, List[Tuple[cadquery.Vector, cadquery.Vector]], Direction, bool]]
@@ -588,20 +632,20 @@ def get_key_corner_edge_connection_mapping(key_matrix: List[List[Key]]) -> List[
             for key_idx in keys_idx:
                 key = key_matrix[row_idx][key_idx]
                 if (not key_idx == last_key_idx and spc_x_direction == Direction.RIGHT) or spc_x_direction == Direction.LEFT:
-                    gap_filler.append(key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT))
+                    gap_filler.append(key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT, key.base.relative_cartesian))
                 if (not key_idx == last_key_idx and spc_x_direction == Direction.LEFT) or spc_x_direction == Direction.RIGHT:
-                    gap_filler.append(key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))
-                gap_filler.append(spc_key.slot.get_cad_corner_edge(spc_x_direction, Direction.BACK))
+                    gap_filler.append(key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT, key.base.relative_cartesian))
+                gap_filler.append(spc_key.slot.get_cad_corner_edge(spc_x_direction, Direction.BACK, spc_key.base.relative_cartesian))
             return gap_filler
 
         result.append((0, 3, helper([3, 4, 5, 6], Direction.LEFT), Direction.BACK_LEFT, polyhedron_mode))
         result.append((0, 3, helper([9, 8, 7, 6], Direction.RIGHT), Direction.BACK_RIGHT, polyhedron_mode))
 
         gap_filler = list()  # type: List[Tuple[cadquery.Vector, cadquery.Vector]]
-        gap_filler.append(b_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT))
-        gap_filler.append(b_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))
-        gap_filler.append(spc_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))
-        gap_filler.append(spc_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK))
+        gap_filler.append(b_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT, b_key.base.relative_cartesian))
+        gap_filler.append(b_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT, b_key.base.relative_cartesian))
+        gap_filler.append(spc_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK, spc_key.base.relative_cartesian))
+        gap_filler.append(spc_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK, spc_key.base.relative_cartesian))
         result.append((0, 3, gap_filler, Direction.BACK, polyhedron_mode))
 
     vertical_spc_gap_filler()
@@ -613,15 +657,15 @@ def get_key_corner_edge_connection_mapping(key_matrix: List[List[Key]]) -> List[
         rsft_key = key_matrix[1][12]
 
         gap_filler = list()  # type: List[Tuple[cadquery.Vector, cadquery.Vector]]
-        gap_filler.append(rctl_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK))
-        gap_filler.append(rctl_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))
-        gap_filler.append(rsft_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))
+        gap_filler.append(rctl_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK, rctl_key.base.relative_cartesian))
+        gap_filler.append(rctl_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK, rctl_key.base.relative_cartesian))
+        gap_filler.append(rsft_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT, rsft_key.base.relative_cartesian))
         result.append((0, 7, gap_filler, Direction.BACK, polyhedron_mode))
 
         gap_filler = list()  # type: List[Tuple[cadquery.Vector, cadquery.Vector]]
-        gap_filler.append(menu_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))
-        gap_filler.append(rctl_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK))
-        gap_filler.append(rsft_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))
+        gap_filler.append(menu_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK,menu_key.base.relative_cartesian))
+        gap_filler.append(rctl_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK, rctl_key.base.relative_cartesian))
+        gap_filler.append(rsft_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT, rsft_key.base.relative_cartesian))
         result.append((0, 6, gap_filler, Direction.BACK_RIGHT, polyhedron_mode))
 
     rctl_rsft_triangle()
@@ -634,15 +678,15 @@ def get_key_corner_edge_connection_mapping(key_matrix: List[List[Key]]) -> List[
         nins_key = key_matrix[0][11]
 
         gap_filler = list()  # type: List[Tuple[cadquery.Vector, cadquery.Vector]]
-        gap_filler.append(np1_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))
-        gap_filler.append(np2_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT))
-        gap_filler.append(nins_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))
+        gap_filler.append(np1_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT, np1_key.base.relative_cartesian))
+        gap_filler.append(np2_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT, np2_key.base.relative_cartesian))
+        gap_filler.append(nins_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK, nins_key.base.relative_cartesian))
         result.append((1, 16, gap_filler, Direction.FRONT_RIGHT, polyhedron_mode))
 
         gap_filler = list()  # type: List[Tuple[cadquery.Vector, cadquery.Vector]]
-        gap_filler.append(np2_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT))
-        gap_filler.append(np2_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))
-        gap_filler.append(nins_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))
+        gap_filler.append(np2_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT, np2_key.base.relative_cartesian))
+        gap_filler.append(np2_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT, np2_key.base.relative_cartesian))
+        gap_filler.append(nins_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK, nins_key.base.relative_cartesian))
         result.append((1, 17, gap_filler, Direction.FRONT, polyhedron_mode))
 
     numpad_mins_triangle()
@@ -655,15 +699,15 @@ def get_key_corner_edge_connection_mapping(key_matrix: List[List[Key]]) -> List[
         num2_key = key_matrix[4][2]
 
         gap_filler = list()  # type: List[Tuple[cadquery.Vector, cadquery.Vector]]
-        gap_filler.append(f1_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))
-        gap_filler.append(num2_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))
-        gap_filler.append(num2_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK))
+        gap_filler.append(f1_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT, f1_key.base.relative_cartesian))
+        gap_filler.append(num2_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK, num2_key.base.relative_cartesian))
+        gap_filler.append(num2_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK, num2_key.base.relative_cartesian))
         result.append((4, 2, gap_filler, Direction.BACK, polyhedron_mode))
 
         gap_filler = list()  # type: List[Tuple[cadquery.Vector, cadquery.Vector]]
-        gap_filler.append(num1_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))
-        gap_filler.append(num2_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK))
-        gap_filler.append(f1_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))
+        gap_filler.append(num1_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK, num1_key.base.relative_cartesian))
+        gap_filler.append(num2_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK, num2_key.base.relative_cartesian))
+        gap_filler.append(f1_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT, f1_key.base.relative_cartesian))
         result.append((4, 1, gap_filler, Direction.BACK_RIGHT, polyhedron_mode))
 
         # triangle in between F8, F9 and 0
@@ -673,15 +717,15 @@ def get_key_corner_edge_connection_mapping(key_matrix: List[List[Key]]) -> List[
         num0_key = key_matrix[4][10]
 
         gap_filler = list()  # type: List[Tuple[cadquery.Vector, cadquery.Vector]]
-        gap_filler.append(f8_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))
-        gap_filler.append(num0_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))
-        gap_filler.append(num0_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK))
+        gap_filler.append(f8_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT, f8_key.base.relative_cartesian))
+        gap_filler.append(num0_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK, num0_key.base.relative_cartesian))
+        gap_filler.append(num0_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK, num0_key.base.relative_cartesian))
         result.append((4, 10, gap_filler, Direction.BACK, polyhedron_mode))
 
         gap_filler = list()  # type: List[Tuple[cadquery.Vector, cadquery.Vector]]
-        gap_filler.append(num9_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))
-        gap_filler.append(num0_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK))
-        gap_filler.append(f8_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))
+        gap_filler.append(num9_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK, num9_key.base.relative_cartesian))
+        gap_filler.append(num0_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK, num0_key.base.relative_cartesian))
+        gap_filler.append(f8_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT, f8_key.base.relative_cartesian))
         result.append((4, 9, gap_filler, Direction.BACK_RIGHT, polyhedron_mode))
 
         # triangle in between F11, F12 and BSP
@@ -691,15 +735,15 @@ def get_key_corner_edge_connection_mapping(key_matrix: List[List[Key]]) -> List[
         bsp_key = key_matrix[4][13]
 
         gap_filler = list()  # type: List[Tuple[cadquery.Vector, cadquery.Vector]]
-        gap_filler.append(f12_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT))
-        gap_filler.append(f12_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))
-        gap_filler.append(bsp_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))
+        gap_filler.append(f12_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT, f12_key.base.relative_cartesian))
+        gap_filler.append(f12_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT, f12_key.base.relative_cartesian))
+        gap_filler.append(bsp_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK, bsp_key.base.relative_cartesian))
         result.append((5, 12, gap_filler, Direction.FRONT, polyhedron_mode))
 
         gap_filler = list()  # type: List[Tuple[cadquery.Vector, cadquery.Vector]]
-        gap_filler.append(f11_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))
-        gap_filler.append(f12_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT))
-        gap_filler.append(bsp_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))
+        gap_filler.append(f11_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT, f11_key.base.relative_cartesian))
+        gap_filler.append(f12_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT, f12_key.base.relative_cartesian))
+        gap_filler.append(bsp_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK, bsp_key.base.relative_cartesian))
         result.append((5, 11, gap_filler, Direction.FRONT_RIGHT, polyhedron_mode))
 
     frow_numrow_tirangles()
@@ -727,11 +771,11 @@ def get_key_corner_edge_connection_mapping(key_matrix: List[List[Key]]) -> List[
         gap_filler.append(get_cad_corner_center_edge(enter_key.slot.get_cad_object(), key_base=enter_key.base, inner=False))
         gap_filler.append(get_cad_corner_center_edge(enter_key.slot.get_cad_object(), key_base=enter_key.base, inner=True))
 
-        e = bottom_left_key.connectors.right.get_cad_face(Direction.BACK).edges("|Z").edges(">X")
+        e = bottom_left_key.connectors.right.get_cad_face(Direction.BACK, bottom_left_key.base.relative_cartesian).edges("|Z").edges(">X")
         gap_filler.append((e.vertices("<Z").val().Center(), e.vertices(">Z").val().Center()))
 
-        gap_filler.append(bottom_left_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))
-        gap_filler.append(left_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))
+        gap_filler.append(bottom_left_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK, bottom_left_key.base.relative_cartesian))
+        gap_filler.append(left_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT, left_key.base.relative_cartesian))
 
         result.append((3, 12, gap_filler, Direction.FRONT_RIGHT, polyhedron_mode))
 
@@ -739,15 +783,15 @@ def get_key_corner_edge_connection_mapping(key_matrix: List[List[Key]]) -> List[
         bottom_key = key_matrix[1][12]
 
         gap_filler = list()  # type: List[Tuple[cadquery.Vector, cadquery.Vector]]
-        gap_filler.append(bottom_left_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))
-        gap_filler.append(enter_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT))
-        gap_filler.append(bottom_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))
+        gap_filler.append(bottom_left_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT, bottom_left_key.base.relative_cartesian))
+        gap_filler.append(enter_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT, enter_key.base.relative_cartesian))
+        gap_filler.append(bottom_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK, bottom_key.base.relative_cartesian))
         result.append((3, 13, gap_filler, Direction.FRONT_LEFT, polyhedron_mode))
 
         gap_filler = list()  # type: List[Tuple[cadquery.Vector, cadquery.Vector]]
-        gap_filler.append(enter_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT))
-        gap_filler.append(enter_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))
-        gap_filler.append(bottom_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))
+        gap_filler.append(enter_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT, enter_key.base.relative_cartesian))
+        gap_filler.append(enter_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT, enter_key.base.relative_cartesian))
+        gap_filler.append(bottom_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK, bottom_key.base.relative_cartesian))
         result.append((3, 13, gap_filler, Direction.FRONT, polyhedron_mode))
 
         # right connector
@@ -756,19 +800,19 @@ def get_key_corner_edge_connection_mapping(key_matrix: List[List[Key]]) -> List[
         bottom_key_right_spacer = key_matrix[1][13]
 
         gap_filler = list()  # type: List[Tuple[cadquery.Vector, cadquery.Vector]]
-        gap_filler.append(enter_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))
-        gap_filler.append(enter_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))
-        gap_filler.append(top_right_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK))
-        gap_filler.append(top_right_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT))
-        gap_filler.append(bottom_right_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK))
-        gap_filler.append(bottom_right_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT))
+        gap_filler.append(enter_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT, enter_key.base.relative_cartesian))
+        gap_filler.append(enter_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK, enter_key.base.relative_cartesian))
+        gap_filler.append(top_right_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK, top_right_key.base.relative_cartesian))
+        gap_filler.append(top_right_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT, top_right_key.base.relative_cartesian))
+        gap_filler.append(bottom_right_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK, bottom_right_key.base.relative_cartesian))
+        gap_filler.append(bottom_right_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT, bottom_right_key.base.relative_cartesian))
         result.append((3, 13, gap_filler, Direction.RIGHT, polyhedron_mode))
 
         gap_filler = list()  # type: List[Tuple[cadquery.Vector, cadquery.Vector]]
-        gap_filler.append(enter_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))
-        gap_filler.append(bottom_right_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT))
-        gap_filler.append(bottom_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))
-        gap_filler.append(bottom_key_right_spacer.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK))
+        gap_filler.append(enter_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT, enter_key.base.relative_cartesian))
+        gap_filler.append(bottom_right_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT, bottom_right_key.base.relative_cartesian))
+        gap_filler.append(bottom_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK, bottom_key.base.relative_cartesian))
+        gap_filler.append(bottom_key_right_spacer.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK, bottom_key_right_spacer.base.relative_cartesian))
         result.append((3, 13, gap_filler, Direction.FRONT_RIGHT, polyhedron_mode))
 
     iso_enter_filling()
@@ -781,22 +825,22 @@ def get_key_corner_edge_connection_mapping(key_matrix: List[List[Key]]) -> List[
         nent_key = key_matrix[1][len(key_matrix[1]) - 1]
 
         gap_filler = list()  # type: List[Tuple[cadquery.Vector, cadquery.Vector]]
-        gap_filler.append(np3_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))
-        gap_filler.append(np3_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))
-        gap_filler.append(nent_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK))
+        gap_filler.append(np3_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT, np3_key.base.relative_cartesian))
+        gap_filler.append(np3_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK, np3_key.base.relative_cartesian))
+        gap_filler.append(nent_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK, nent_key.base.relative_cartesian))
         result.append((1, len(key_matrix[1]) - 2, gap_filler, Direction.RIGHT, polyhedron_mode))
 
         gap_filler = list()  # type: List[Tuple[cadquery.Vector, cadquery.Vector]]
-        gap_filler.append(np3_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))
-        gap_filler.append(nent_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK))
-        gap_filler.append(nent_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT))
-        gap_filler.append(ndel_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))
+        gap_filler.append(np3_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT, np3_key.base.relative_cartesian))
+        gap_filler.append(nent_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK, nent_key.base.relative_cartesian))
+        gap_filler.append(nent_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT, nent_key.base.relative_cartesian))
+        gap_filler.append(ndel_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK, ndel_key.base.relative_cartesian))
         result.append((0, len(key_matrix[0]) - 2, gap_filler, Direction.BACK_RIGHT, polyhedron_mode))
 
         gap_filler = list()  # type: List[Tuple[cadquery.Vector, cadquery.Vector]]
-        gap_filler.append(nent_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT))
-        gap_filler.append(ndel_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))
-        gap_filler.append(ndel_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))
+        gap_filler.append(nent_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT, nent_key.base.relative_cartesian))
+        gap_filler.append(ndel_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT, ndel_key.base.relative_cartesian))
+        gap_filler.append(ndel_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK, ndel_key.base.relative_cartesian))
         result.append((0, len(key_matrix[0]) - 2, gap_filler, Direction.RIGHT, polyhedron_mode))
 
         # horizontal gap in between numpad 9, numpad 6 and NPLU
@@ -806,42 +850,43 @@ def get_key_corner_edge_connection_mapping(key_matrix: List[List[Key]]) -> List[
         np6_key = key_matrix[2][len(key_matrix[2]) - 2]
 
         gap_filler = list()  # type: List[Tuple[cadquery.Vector, cadquery.Vector]]
-        gap_filler.append(np9_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))
-        gap_filler.append(np9_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))
-        gap_filler.append(nplu_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK))
+        gap_filler.append(np9_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT, np9_key.base.relative_cartesian))
+        gap_filler.append(np9_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK, np9_key.base.relative_cartesian))
+        gap_filler.append(nplu_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK, nplu_key.base.relative_cartesian))
         result.append((3, len(key_matrix[3]) - 2, gap_filler, Direction.RIGHT, polyhedron_mode))
 
         gap_filler = list()  # type: List[Tuple[cadquery.Vector, cadquery.Vector]]
-        gap_filler.append(np9_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))
-        gap_filler.append(nplu_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK))
-        gap_filler.append(nplu_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT))
-        gap_filler.append(np6_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))
+        gap_filler.append(np9_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT, np9_key.base.relative_cartesian))
+        gap_filler.append(nplu_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK, nplu_key.base.relative_cartesian))
+        gap_filler.append(nplu_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT, nplu_key.base.relative_cartesian))
+        gap_filler.append(np6_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK, np6_key.base.relative_cartesian))
         result.append((2, len(key_matrix[2]) - 2, gap_filler, Direction.BACK_RIGHT, polyhedron_mode))
 
         gap_filler = list()  # type: List[Tuple[cadquery.Vector, cadquery.Vector]]
-        gap_filler.append(nplu_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT))
-        gap_filler.append(np6_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))
-        gap_filler.append(np6_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))
+        gap_filler.append(nplu_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT, nplu_key.base.relative_cartesian))
+        gap_filler.append(np6_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT, np6_key.base.relative_cartesian))
+        gap_filler.append(np6_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK, np6_key.base.relative_cartesian))
         result.append((2, len(key_matrix[2]) - 2, gap_filler, Direction.RIGHT, polyhedron_mode))
 
         # intersection in between numpad 6, numpad 3, NPLU and NENT
 
         gap_filler = list()  # type: List[Tuple[cadquery.Vector, cadquery.Vector]]
-        gap_filler.append(np6_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))
-        gap_filler.append(np3_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))
-        gap_filler.append(nent_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK))
-        gap_filler.append(nplu_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT))
+        gap_filler.append(np6_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT, np6_key.base.relative_cartesian))
+        gap_filler.append(np3_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK, np3_key.base.relative_cartesian))
+        gap_filler.append(nent_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK, nent_key.base.relative_cartesian))
+        gap_filler.append(nplu_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT, nplu_key.base.relative_cartesian))
         result.append((2, len(key_matrix[2]) - 2, gap_filler, Direction.FRONT_RIGHT, polyhedron_mode))
 
         # vertical gap in between NPLU and NENT
 
         gap_filler = list()  # type: List[Tuple[cadquery.Vector, cadquery.Vector]]
-        gap_filler.append(nplu_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT))
-        gap_filler.append(nplu_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT))
-        gap_filler.append(nent_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK))
-        gap_filler.append(nent_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK))
+        gap_filler.append(nplu_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.FRONT, nplu_key.base.relative_cartesian))
+        gap_filler.append(nplu_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT, nplu_key.base.relative_cartesian))
+        gap_filler.append(nent_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK, nent_key.base.relative_cartesian))
+        gap_filler.append(nent_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK, nent_key.base.relative_cartesian))
         result.append((3, len(key_matrix[3]) - 1, gap_filler, Direction.FRONT, polyhedron_mode))
 
     nent_ndel_connectors()
 
+    print("compute key corner-edge connection mapping: done")
     return result
