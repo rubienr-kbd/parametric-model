@@ -1,4 +1,4 @@
-from typing import Optional, Dict
+from typing import Dict
 import math
 from .key_mixins import *
 from src import model_importer
@@ -229,7 +229,7 @@ class KeySwitchSlot(KeyBox, Computeable, CadObject):
         self.undercut_width = config.undercut_width  # type: float
         self.undercut_thickness = config.undercut_thickness  # type: float
 
-    def compute(self, basis_face: cadquery.Workplane, do_fill: bool, cache: ObjectCache, cartesian_root: Optional[CartesianRoot] = CartesianRoot(), *args, **kwargs) -> None:
+    def compute(self, basis_face: cadquery.Workplane, do_fill: bool, cache: ObjectCache, cartesian_root: Optional[CartesianRoot], *args, **kwargs) -> None:
         """
         To ensure the key cap clearance (in case keys are not placed planar),
         we use the key cap footprint as base size for the key slot.
@@ -248,20 +248,18 @@ class KeySwitchSlot(KeyBox, Computeable, CadObject):
         xz = cartesian_root.zx_normal
         yz = cartesian_root.yz_normal
 
-        # use diagonals as further caching attributes
-        tl = basis_face.vertices("<{X} and >{Y}".format(X=x_str, Y=y_str)).val()  # type: cadquery.Vertex
-        tr = basis_face.vertices(">{X} and >{Y}".format(X=x_str, Y=y_str)).val()  # type: cadquery.Vertex
-        # TODO "<X and <Y" sometimes returns a Vector insted of Vertice
-        #   bl = basis_face.vertices("<X and <Y").val()  # type: cadquery.Vertex
-        bl = basis_face.vertices("<{X}".format(X=x_str)).val()  # type: cadquery.Vertex
-        br = basis_face.vertices(">{X} and <{Y}".format(X=x_str, Y=y_str)).val()  # type: cadquery.Vertex
+        # use diagonals as further caching attributes (face selection sometimes returns a cadquery.Vector instead of cadquery.Vertex)
+        tl = self._to_vertex(basis_face.vertices("<{X} and >{Y}".format(X=x_str, Y=y_str)).val())
+        tr = self._to_vertex(basis_face.vertices(">{X} and >{Y}".format(X=x_str, Y=y_str)).val())
+        bl = self._to_vertex(basis_face.vertices("<{X}".format(X=x_str)).val())  # type: cadquery.Vertex
+        br = self._to_vertex(basis_face.vertices(">{X} and <{Y}".format(X=x_str, Y=y_str)).val())
         diag1 = math.dist([tl.X, tl.Y], [br.X, br.Y])
         diag2 = math.dist([tr.X, tr.Y], [bl.X, bl.Y])
 
         cached = cache.get("slot", str(diag1), str(diag2), str(do_fill))
 
         if cached is None:
-            offset = basis_face.vertices(">{Z}".format(Z=z_str)).first().val()  # type: cadquery.Vertex
+            offset = self._to_vertex(basis_face.vertices(">{Z}".format(Z=z_str)).first().val())
             z_offset = offset.Z
 
             if do_fill:
@@ -271,9 +269,9 @@ class KeySwitchSlot(KeyBox, Computeable, CadObject):
                     .translate((0, 0, -z_offset))
                 self._cad_object = skin
             else:
-                top = cadquery.Workplane().sketch() \
+                top_skin = cadquery.Workplane().sketch() \
                     .face(basis_face.edges().vals()).faces("<{Z}".format(Z=z_str)) \
-                    .rect(self.slot_width, self.slot_depth, angle=90, mode="s", tag="slot").finalize().extrude(-self.undercut_thickness) \
+                    .rect(self.slot_width, self.slot_depth, angle=90, mode="s").finalize().extrude(-self.undercut_thickness) \
                     .translate((0, 0, -z_offset))
 
                 undercut_front = cadquery.Workplane() \
@@ -284,11 +282,12 @@ class KeySwitchSlot(KeyBox, Computeable, CadObject):
                     .box(self.undercut_depth, self.undercut_width, self.thickness) \
                     .translate((-self.slot_width / 2 - self.undercut_depth / 2, 0, -self.undercut_thickness - self.thickness / 2))
                 undercut_right = undercut_left.mirror(yz)
-                undercut = undercut_front.union(undercut_right).union(undercut_back).union(undercut_left)
+                undercuts = undercut_front.union(undercut_right).union(undercut_back).union(undercut_left)
 
-                bottom = cadquery.Workplane().sketch().face(top.faces("<Z".format(Z=z_str)).edges().vals()).faces("<{Z}".format(Z=z_str)) \
-                    .finalize().extrude(-(self.thickness - self.undercut_thickness))
-                self._cad_object = top.union(bottom.cut(undercut))
+                bottom_skin = cadquery.Workplane().sketch().face(top_skin.faces("<Z".format(Z=z_str)).edges().vals()).faces("<{Z}".format(Z=z_str)) \
+                    .finalize().extrude(-(self.thickness - self.undercut_thickness))\
+                    .cut(undercuts)
+                self._cad_object = top_skin.union(bottom_skin)
 
             cache.store(self._cad_object, "slot", str(diag1), str(diag2), str(do_fill))
         else:
@@ -296,6 +295,8 @@ class KeySwitchSlot(KeyBox, Computeable, CadObject):
 
     def get_cad_corner_edge(self, direction_x: Direction, direction_y: Direction, cartesian_root: CartesianRoot) -> Tuple[cadquery.Vector, cadquery.Vector]:
         """
+        @param direction_x
+        @param direction_y
         @param cartesian_root: cartesian axis to use for face selection;
           if the object is rotated, the cartesian root must share the same rotation for selectors (parallel/orthogonal/...)
         """
@@ -317,9 +318,9 @@ class KeySwitchSlot(KeyBox, Computeable, CadObject):
         else:
             assert False
 
-        bottom = edge.vertices("<{Z}".format(Z=z_str)).val().Center()  # type: cadquery.Vertex
-        top = edge.vertices(">{Z}".format(Z=z_str)).val().Center()  # type: cadquery.Vertex
-        return bottom, top
+        bottom = self._to_vertex(edge.vertices("<{Z}".format(Z=z_str)).val().Center())
+        top = self._to_vertex(edge.vertices(">{Z}".format(Z=z_str)).val().Center())
+        return bottom.Center(), top.Center()
 
     def get_cad_corner_vertex(self, direction_x: Direction, direction_y: Direction, direction_z: Direction, cartesian_root: CartesianRoot) -> cadquery.Vector:
         """
@@ -363,6 +364,7 @@ class KeySwitchSlot(KeyBox, Computeable, CadObject):
 
     def get_cad_face(self, direction: Direction, cartesian_root: CartesianRoot) -> cadquery.Workplane:
         """
+        @param direction
         @param cartesian_root: cartesian axis to use for face selection;
           if the object is rotated, the cartesian root must share the same rotation for selectors (parallel/orthogonal/...)
         """
@@ -380,6 +382,16 @@ class KeySwitchSlot(KeyBox, Computeable, CadObject):
         else:
             assert False
 
+    @staticmethod
+    def _to_vertex(v: Union[cadquery.Vector, cadquery.Vertex]) -> cadquery.Vertex:
+        """
+        Workaround: Sometimes the face selection returns a cadquery.Vector instead of cadquery.Vertex.
+        """
+        if type(v) == cadquery.Vertex:
+            return v
+        assert type(v) == cadquery.Vector
+        return cadquery.Vertex.makeVertex(*v.toTuple())
+
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -391,6 +403,7 @@ class KeyConnector(CadObject):
 
     def get_cad_face(self, direction: Direction, cartesian_root: CartesianRoot) -> cadquery.Workplane:
         """
+        @param direction
         @param cartesian_root: cartesian axis to use for face selection;
           if the object is rotated, the cartesian root must share the same rotation for selectors (parallel/orthogonal/...)
         """
@@ -473,13 +486,13 @@ class DactylKey(object):
 
 class CadObjects(IterableObject):
     def __init__(self):
-        self.plane = None  # type: Optional[Shape]
-        self.origin = None  # type: Optional[Shape]
-        self.name = None  # type: Optional[Shape]
-        self.cap = None  # type: Optional[Shape]
-        self.slot = None  # type: Optional[Shape]
-        self.switch = None  # type: Optional[Shape]
-        self.connectors = list()  # type: List[Tuple[str, Shape]]
+        self.plane = None  # type: Optional[cadquery.Workplane]
+        self.origin = None  # type: Optional[cadquery.Workplane]
+        self.name = None  # type: Optional[cadquery.Workplane]
+        self.cap = None  # type: Optional[cadquery.Workplane]
+        self.slot = None  # type: Optional[cadquery.Workplane]
+        self.switch = None  # type: Optional[cadquery.Workplane]
+        self.connectors = list()  # type: List[Tuple[str, cadquery.Workplane]]
 
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -513,7 +526,8 @@ class Key(Computeable, CadKeyMixin, DactylAttributesMixin):
         self.cap.compute(cache=Key.object_cache)
         self.slot.compute(basis_face=self.cap.get_cad_object().faces("<Z"),
                           do_fill=self.base.is_filled,
-                          cache=Key.object_cache)
+                          cache=Key.object_cache,
+                          cartesian_root=self.base.relative_cartesian)
         if DEBUG.render_switch:
             self.switch.compute()
         # translate cad objects to final position

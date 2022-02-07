@@ -1,5 +1,5 @@
 import re
-from typing import List, Tuple, Optional
+from typing import List, Tuple
 import os.path
 import argparse
 from functools import wraps

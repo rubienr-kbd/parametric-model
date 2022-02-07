@@ -23,6 +23,7 @@ what doesn't work now
 * no walls
 * no baseplate
 * no stabilizer slots for long keys
+* iso layout: proper key placement is not verified
 
 what is the aim
 * configurable layout: ISO, ANSI, size (full, no numpad, no arrow keys)

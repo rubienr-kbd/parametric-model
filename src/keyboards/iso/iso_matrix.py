@@ -291,9 +291,11 @@ def apply_translation_offset(key_matrix: List[List[Key]]) -> None:
         for key in row:
             # TODO rubienr - prototyping
             if row_idx == 0 and key_idx == 3:
+                continue
                 key.base.position_offset = tuple(map(operator.add, key.base.position_offset, (0, 0, 2)))
                 key.base.compute_relative_cardinal_translation()
             if row_idx == 1 and key_idx == 1:
+                continue
                 key.base.position_offset = tuple(map(operator.add, key.base.position_offset, (0, 0, 2)))
                 key.base.compute_relative_cardinal_translation()
             key_idx += 1
@@ -318,6 +320,7 @@ def apply_orientation_offset(key_matrix: List[List[Key]]) -> None:
     for row in key_matrix:
         for key in row:
             if row_idx == 1 and key_idx == 1:
+                continue
                 # TODO rubienr - prototyping
                 key.base.rotation_offset = tuple(map(operator.add, key.base.rotation_offset, (5, 5, 5)))
                 key.base.compute_relative_cardinal_rotation()
@@ -663,7 +666,7 @@ def get_key_corner_edge_connection_mapping(key_matrix: List[List[Key]]) -> List[
         result.append((0, 7, gap_filler, Direction.BACK, polyhedron_mode))
 
         gap_filler = list()  # type: List[Tuple[cadquery.Vector, cadquery.Vector]]
-        gap_filler.append(menu_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK,menu_key.base.relative_cartesian))
+        gap_filler.append(menu_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.BACK, menu_key.base.relative_cartesian))
         gap_filler.append(rctl_key.slot.get_cad_corner_edge(Direction.LEFT, Direction.BACK, rctl_key.base.relative_cartesian))
         gap_filler.append(rsft_key.slot.get_cad_corner_edge(Direction.RIGHT, Direction.FRONT, rsft_key.base.relative_cartesian))
         result.append((0, 6, gap_filler, Direction.BACK_RIGHT, polyhedron_mode))
@@ -758,8 +761,8 @@ def get_key_corner_edge_connection_mapping(key_matrix: List[List[Key]]) -> List[
             point = key_base.position if inner else (key_base.position[0] - key_base.width, key_base.position[1], key_base.position[2])
             edge = face.edges("|Z").edges(NearestToPointSelector(point))
 
-            bottom = edge.vertices("<Z").val().Center()  # type: cadquery.Vertex
-            top = edge.vertices(">Z").val().Center()  # type: cadquery.Vertex
+            bottom = edge.vertices("<Z").val().Center()
+            top = edge.vertices(">Z").val().Center()
             return bottom, top
 
         gap_filler = list()  # type: List[Tuple[cadquery.Vector, cadquery.Vector]]

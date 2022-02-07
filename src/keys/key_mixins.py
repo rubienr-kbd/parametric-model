@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import operator
 from cmath import sqrt
-from typing import TYPE_CHECKING, Union, List, Tuple
+from typing import TYPE_CHECKING, Union, List, Tuple, Optional
 from enum import Enum
 import cadquery
 
 if TYPE_CHECKING:
     from .key import Key
+
 from src.cfg.debug import DEBUG
 
 
@@ -48,13 +49,13 @@ class IterableObject(object):
 
 class Computeable(object):
 
-    def update(self: "CadObject", *args, **kwargs) -> None:
+    def update(self: Union[Computeable, CadObject], *_args, **_kwargs) -> None:
         """
         Resolves/computes input data dependencies for a subsequent compute().
         """
         pass
 
-    def compute(self, *args, **kwargs) -> None:
+    def compute(self: Union[Computeable, CadObject], *_args, **_kwargs) -> None:
         """
         Computes object and cad object
           - py object: noop
@@ -72,19 +73,19 @@ class Computeable(object):
 class CadObject(object):
 
     def __init__(self):
-        self._cad_object = None
+        self._cad_object = None  # type: Optional[cadquery.Workplane]
 
-    def has_cad_object(self: Computeable, *args, **kwargs) -> bool:
+    def has_cad_object(self: Computeable, *_args, **_kwargs) -> bool:
         return hasattr(self, "_cad_object") and self._cad_object is not None
 
-    def get_cad_object(self: Union[Computeable, "CadObject"], *args, **kwargs) -> cadquery.Workplane:
+    def get_cad_object(self: Union[Computeable, CadObject], *_args, **_kwargs) -> cadquery.Workplane:
         """
         If not re-implemented returns the pre-computed _cad_object property.
         """
         assert self.has_cad_object()
         return self._cad_object
 
-    def set_cad_object(self: Union[Computeable, "CadObject"], cad_object: cadquery.Workplane, *args, **kwargs) -> None:
+    def set_cad_object(self: Union[Computeable, CadObject], cad_object: cadquery.Workplane, *_args, **_kwargs) -> None:
         self._cad_object = cad_object
 
 
@@ -245,10 +246,7 @@ class KeyPlane(KeyRect):
 
         rx, ry, rz = self.total_rotation
         cq_origin = cadquery.Vector(self.ABSOLUTE_CARTESIAN.origin)
-        cq_vec_x, cq_vec_y, cq_vec_z = cadquery.Vector(self.ABSOLUTE_CARTESIAN.x_axis), \
-                                       cadquery.Vector(self.ABSOLUTE_CARTESIAN.y_axis), \
-                                       cadquery.Vector(self.ABSOLUTE_CARTESIAN.z_axis)
-
+        cq_vec_x, cq_vec_y, cq_vec_z = cadquery.Vector(self.ABSOLUTE_CARTESIAN.x_axis), cadquery.Vector(self.ABSOLUTE_CARTESIAN.y_axis), cadquery.Vector(self.ABSOLUTE_CARTESIAN.z_axis)
         cq_line_x = cadquery.Edge.makeLine(cq_origin, cq_vec_x)
         cq_line_y = cadquery.Edge.makeLine(cq_origin, cq_vec_y)
         cq_line_z = cadquery.Edge.makeLine(cq_origin, cq_vec_z)
@@ -264,7 +262,7 @@ class KeyPlane(KeyRect):
 
 class KeyBaseMixin(object):
 
-    def align_to_position(self: Union[KeyPlane, KeyBox], position: float, pos: Direction) -> None:
+    def align_to_position(self: Union[KeyPlane, KeyBox, KeyBaseMixin], position: float, pos: Direction) -> None:
         """
         Aligns our position top/bottom, left/right or front/top face to x (left/right), y (front/back) or z-axis (top/bottom).
         """
@@ -295,10 +293,6 @@ class KeyBaseMixin(object):
 
 class CadKeyMixin(object):
 
-    @staticmethod
-    def tag(cad_object: cadquery.Workplane, is_visible: bool, tag_text: str) -> cadquery.Workplane:
-        return cad_object.tag("{}{}".format(tag_text, "_invisible" if not is_visible else ""))
-
     def post_compute_cad_key_base(self: Key) -> None:
         origin, relative, (rx, ry, rz) = self.base.ABSOLUTE_CARTESIAN.origin, self.base.relative_cartesian, self.base.total_rotation
         self.base._cad_object = self.base.get_cad_object() \
@@ -306,7 +300,7 @@ class CadKeyMixin(object):
             .rotate(origin, relative.x_axis, rx) \
             .rotate(origin, relative.y_axis, ry) \
             .translate(tuple(self.base.total_translation))
-        self.base._cad_object = CadKeyMixin.tag(self.base.get_cad_object(), self.base.is_visible, "key_base")
+        self.base._cad_object = self.base.get_cad_object()
 
     def post_compute_key_name(self: Key) -> cadquery.Workplane:
         o = self.object_cache.get("name", self.name)
@@ -317,7 +311,6 @@ class CadKeyMixin(object):
                 .rotate(origin, relative.z_axis, rz) \
                 .rotate(origin, relative.x_axis, rx) \
                 .rotate(origin, relative.y_axis, ry)
-            o = CadKeyMixin.tag(o, self.base.is_visible, "name")
             self.object_cache.store(o, "name", self.name)
 
         return o.translate(tuple(self.base.total_translation))
@@ -331,7 +324,6 @@ class CadKeyMixin(object):
                 .rotate(origin, relative.z_axis, rz) \
                 .rotate(origin, relative.x_axis, rx) \
                 .rotate(origin, relative.y_axis, ry)
-            o = CadKeyMixin.tag(o, self.base.is_visible, "origin")
             self.object_cache.store(o, "origin", self.name)
 
         return o.translate(tuple(self.base.total_translation))
@@ -343,7 +335,7 @@ class CadKeyMixin(object):
             .rotate(origin, relative.x_axis, rx) \
             .rotate(origin, relative.y_axis, ry) \
             .translate(tuple(self.base.total_translation))
-        self.cap._cad_object = CadKeyMixin.tag(self.cap.get_cad_object(), self.base.is_visible, "cap")
+        self.cap._cad_object = self.cap.get_cad_object()
 
     def post_compute_cad_slot(self: Key) -> None:
         origin, relative, (rx, ry, rz) = self.base.ABSOLUTE_CARTESIAN.origin, self.base.relative_cartesian, self.base.total_rotation
@@ -352,7 +344,7 @@ class CadKeyMixin(object):
             .rotate(origin, relative.x_axis, rx) \
             .rotate(origin, relative.y_axis, ry) \
             .translate(tuple(self.base.total_translation))
-        self.slot._cad_object = CadKeyMixin.tag(self.slot.get_cad_object(), self.base.is_visible, "slot")
+        self.slot._cad_object = self.slot.get_cad_object()
 
     def post_compute_cad_switch(self: Key) -> None:
         origin, relative, (rx, ry, rz) = self.base.ABSOLUTE_CARTESIAN.origin, self.base.relative_cartesian, self.base.total_rotation
@@ -361,7 +353,7 @@ class CadKeyMixin(object):
             .rotate(origin, relative.x_axis, rx) \
             .rotate(origin, relative.y_axis, ry) \
             .translate(tuple(self.base.total_translation))
-        self.switch._cad_object = CadKeyMixin.tag(self.switch.get_cad_object(), self.base.is_visible, "switch")
+        self.switch._cad_object = self.switch.get_cad_object()
 
     def final_post_compute(self: Key):
         self.post_compute_cad_key_base()
@@ -382,18 +374,18 @@ class CadKeyMixin(object):
 
 class DactylAttributesMixin(object):
 
-    def set_is_left_hand(self: "Key") -> Union["Key", DactylAttributesMixin]:
+    def set_is_left_hand(self: Key) -> Union[Key, DactylAttributesMixin]:
         self.dactyl.is_left_hand = True
         return self
 
-    def set_is_right_hand(self: "Key") -> Union["Key", DactylAttributesMixin]:
+    def set_is_right_hand(self: Key) -> Union[Key, DactylAttributesMixin]:
         self.dactyl.is_left_hand = False
         return self
 
-    def set_is_arrow_block(self: "Key", is_arrow_block=True) -> Union["Key", DactylAttributesMixin]:
+    def set_is_arrow_block(self: Key, is_arrow_block=True) -> Union[Key, DactylAttributesMixin]:
         self.dactyl.is_arrow_block = is_arrow_block
         return self
 
-    def set_is_numpad_block(self: "Key", is_numpad_block=True) -> Union["Key", DactylAttributesMixin]:
+    def set_is_numpad_block(self: Key, is_numpad_block=True) -> Union[Key, DactylAttributesMixin]:
         self.dactyl.is_numpad_block = is_numpad_block
         return self
