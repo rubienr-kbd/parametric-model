@@ -149,41 +149,41 @@ class IsoEnterKey(Key150Unit):
         super(IsoEnterKey, self).__init__()
         self.name = "ENT"
         self.base.unit_depth_factor = 2
-        self.base.position_offset = [0, - config.MODEL_CONFIG.key_base.unit_length / 2, 0]
+        self.base.position_offset = [1.75, -config.MODEL_CONFIG.key_base.unit_length / 2, 0]  # position the key base at the center of both lines
 
         def key_cap_compute(inner_self: KeyCap, outer_self=self, *_args, **_kwargs) -> None:
             """
-            Override for key cap compute: the key cap is not a simple box
+            Override for key cap compute: the key cap is not a simple box thus we compose it of two combined boxes spanning two rows
             """
             back_part = cadquery.Workplane() \
-                .wedge(inner_self.width,
-                       inner_self.thickness,
-                       outer_self.base.unit_length - inner_self.depth_clearance,
+                .wedge(inner_self.width,  # key width; unit_length * 1.75
+                       inner_self.thickness,  # key height
+                       outer_self.base.unit_length - inner_self.depth_clearance,  # key depth
                        inner_self.dish_inset,
                        inner_self.dish_inset,
                        inner_self.width - inner_self.dish_inset,
                        outer_self.base.unit_length - inner_self.depth_clearance - inner_self.dish_inset,
-                       centered=(True, False, True)) \
-                .rotate((0, 0, 0), (1, 0, 0), 90) \
-                .translate((0, outer_self.base.unit_length / 2, inner_self.z_clearance))
-
-            front_part = cadquery.Workplane() \
-                .wedge(outer_self.base.unit_length * 1.25 - inner_self.depth_clearance,
-                       inner_self.thickness,
-                       outer_self.base.unit_length,
-                       inner_self.dish_inset,
-                       - inner_self.dish_inset,
-                       outer_self.base.unit_length * 1.25 - inner_self.depth_clearance - inner_self.dish_inset,
-                       outer_self.base.unit_length - inner_self.dish_inset,
                        centered=(True, False, False)) \
                 .rotate((0, 0, 0), (1, 0, 0), 90) \
-                .translate(((2 - 1.25) / 2 * (outer_self.base.unit_length - inner_self.width_clearance / 2) / 2 - inner_self.width_clearance / 2,
+                .translate((-1.75, config.MODEL_CONFIG.key_base.unit_length - inner_self.depth_clearance / 2, inner_self.z_clearance))
+
+            front_part = cadquery.Workplane() \
+                .wedge(outer_self.base.unit_length * 1.25 - inner_self.depth_clearance,  # key width
+                       inner_self.thickness,  # key height
+                       outer_self.base.unit_length,  # key depth
+                       inner_self.dish_inset,
+                       -inner_self.dish_inset,
+                       outer_self.base.unit_length * 1.25 - inner_self.depth_clearance - inner_self.dish_inset,
+                       outer_self.base.unit_length - inner_self.dish_inset,
+                       centered=(False, False, False)) \
+                .rotate((0, 0, 0), (1, 0, 0), 90) \
+                .translate((-1.75 - config.MODEL_CONFIG.key_base.unit_length / 2 + inner_self.width_clearance / 2,
                             inner_self.depth_clearance / 2,
                             inner_self.z_clearance))
 
             inner_self._cad_object = back_part.union(front_part)
 
-        def key_slot_compute(inner_self, basis_face: cadquery.Workplane, do_fill: bool, cache: ObjectCache, cartesian_root: Optional[CartesianRoot], outer_self=self,  *_args, **_kwargs) -> None:
+        def key_slot_compute(inner_self, basis_face: cadquery.Workplane, do_fill: bool, cache: ObjectCache, cartesian_root: Optional[CartesianRoot], outer_self=self, *_args, **_kwargs) -> None:
             """
             Override for key slot compute: the key cap is not a simple box, thus the slot is not aligned with the key cap.
             """
@@ -207,7 +207,7 @@ class IsoEnterKey(Key150Unit):
 
             if cached is None:
                 anchor_edge = basis_face.edges(">{X} and |{Y}".format(X=x_str, Y=y_str)).val()  # type: cadquery.Edge
-                z_offset = cadquery.Shape.centerOfMass(anchor_edge).z
+                z_offset = - cadquery.Shape.centerOfMass(anchor_edge).z
 
                 skin = cadquery.Workplane().sketch() \
                     .face(basis_face.edges().vals()).faces("<{Z}".format(Z=z_str)) \
@@ -218,9 +218,9 @@ class IsoEnterKey(Key150Unit):
                 if do_fill:
                     self._cad_object = skin
                 else:
-                    slot = cadquery.Workplane()\
+                    slot = cadquery.Workplane() \
                         .box(inner_self.slot_width, inner_self.slot_depth, inner_self.thickness) \
-                        .translate((0, 0, -inner_self.thickness/2))
+                        .translate((0, 0, -inner_self.thickness / 2))
 
                     undercut_front = cadquery.Workplane() \
                         .box(inner_self.undercut_width, inner_self.undercut_depth, inner_self.thickness) \

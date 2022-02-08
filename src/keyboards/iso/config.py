@@ -10,11 +10,14 @@ from typing import Optional
 class KeyBaseConfig(object):
     def __init__(self):
         """
-        self.unit_length : the center to center distance of two adjacent keys in the same row; usually 19mm
+        Key footprint parameters.
+
+        self.unit_length : the center to center distance of two adjacent 1 unit keys in the same row; usually 19mm
+                           example: 18mm key length + 1mm clearance = 19mm key unit length
         self.clearance_x : extra clearance for the vertical gap width  in between two adjacent keys in the same row; usually 0mm
         self.clearance_y : extra clearance for the horizontal gap width in between two neighbouring rows: usually 0mm
         """
-        self.unit_length = 19  # type: float
+        self.unit_length = 19 - 0.5  # type: float
         self.clearance_x = 0 / 2  # type: float
         self.clearance_y = 0 / 2  # type: float
 
@@ -32,18 +35,30 @@ class KeyCapConfig(object):
 
     def __init__(self):
         """
+        Key cap parameters: the effective cap footprint size is determined by the key footprint minus clearance.
+                            The footprint outline is the template for the key base to ensure sunken keys are not obstructed by walls (non-planar layout).
         Aim: parameters are used to roughly illustrate the key cap placement
         Non aim: render the key shape in detail or even SA/OEM/etc. shape
 
+        Example width/depth:
+          unit_length     = 19mm
+          width clearance =  1mm
+          key cap width   = 18mm
+
+        Example clearance:
+          2.0mm rather wide clearance, for example hp keyboard SK-2120
+          1.0mm is okay
+          0.5mm works just fine
+
         self.width_clearance : width of the vertical gap in between two neighbouring keys in the same row
         self.depth_clearance : width of the horizontal gap in between two neighbouring rows
-        self.thickness : height to 3-d sketch the key cap
+        self.thickness : height of the key cap
         self.z_clearance : distance in between base plane and the bottom of the key cap
         self.dish_inset : the tapering on the top (dish) for each side
         """
-        # ensure that: clearance + width + clearance == unit_length
-        self.width_clearance = 2  # type: float
-        self.depth_clearance = 2  # type: float
+        # ensure that: clearance + cap_width == unit_length
+        self.width_clearance = 1 - 0.5  # type: float
+        self.depth_clearance = 1 - 0.5  # type: float
         self.thickness = 9  # type: float
         self.z_clearance = 6  # type: float
         self.dish_inset = 1  # type: float
@@ -73,12 +88,12 @@ class KeySwitchSlotConfig(object):
         self.undercut_undercut_depth : horizontal inset of undercut below top skin
         self.undercut_thickness : thickness of top skin face to top/beginning of undercut (length in z direction)
         """
-        self.width = 14  # type: float
-        self.depth = 14  # type: float
+        self.width = 14.1  # type: float
+        self.depth = 14.1  # type: float
         self.thickness = 4  # type: float
         self.undercut_width = 6  # type: float
         self.undercut_depth = 1  # type: float
-        self.undercut_thickness = 1.25  # type: float
+        self.undercut_thickness = 1.65  # type: float
 
 
 class GroupConfig(object):
